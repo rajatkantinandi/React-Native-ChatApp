@@ -3,35 +3,73 @@ import {
   KeyboardAvoidingView,
   FlatList,
   StyleSheet,
-  Keyboard
+  AsyncStorage
 } from "react-native";
 import Message from "../Components/Message";
 import InputArea from "../Components/InputArea";
+import credentials from "../credentials";
+import requestApi from "../requestApi";
 class Chatscreen extends React.Component {
   static navigationOptions = ({ navigation }) => {
     return {
-      title: navigation.getParam("roomId", "Default")
+      title: navigation.getParam("roomName", "Default")
     };
   };
   state = {
-    messages: [
-      { from: "George", text: "Hey Everyone !!", sent: false },
-      {
-        from: "George",
-        text:
-          "This is George from the future. If you can give me some nuclear fuel then I can recharge my time machine & head back to my time.",
-        sent: false
-      },
-      { from: "Rajat", text: "Maybe I can help you", sent: true }
-    ],
-    roomName: this.props.navigation.roomId | "Default",
-    roomId: this.props.navigation.roomName
+    name: this.props.navigation.getParam("name"),
+    id: this.props.navigation.getParam("id"),
+    messages: [],
+    roomName: this.props.navigation.getParam("roomName") | "Default",
+    roomId: this.props.navigation.getParam("roomId"),
+    activity: true
   };
   _keyExtractor = (item, index) => "" + index;
-  componentDidMount = () => {
-    // Keyboard.addListener("keyboardDidShow", e =>
-    //   this.scroll.scrollToEnd({ animated: false })
-    // );
+  componentDidMount = async () => {
+    await this.getAllMessagesLocal();
+    await this.getAllMessages();
+  };
+  componentDidUpdate = async () => {
+    await AsyncStorage.setItem(
+      "room:" + this.state.roomId,
+      JSON.stringify(this.state.messages)
+    );
+  };
+  sendMessage = async text => {
+    const url = credentials.SERVER_URL + "/sendMessage";
+    const data = {
+      instanceLocator: credentials.INSTANCE_LOCATOR,
+      key: credentials.SECRET_KEY,
+      roomId: this.state.roomId,
+      id: this.state.id,
+      text: text
+    };
+    this.setState({
+      messages: [...this.state.messages, { user_id: this.state.id, text: text }]
+    });
+    const response = await requestApi(url, data);
+    const result = await response.json();
+    if (response.ok) alert("Message id: " + result.messageId);
+    else alert(response.statusTxt);
+  };
+  getAllMessagesLocal = async () => {
+    let messages = await AsyncStorage.getItem("room:" + this.state.roomId);
+    if (messages) {
+      messages = JSON.parse(messages);
+      this.setState({ messages });
+    }
+  };
+  getAllMessages = async () => {
+    const url = credentials.SERVER_URL + "/getRoomMessages";
+    const data = {
+      instanceLocator: credentials.INSTANCE_LOCATOR,
+      key: credentials.SECRET_KEY,
+      roomId: this.state.roomId
+    };
+    const response = await requestApi(url, data);
+    const result = await response.json();
+    if (response.ok) this.setState({ messages: result });
+    else alert(response.statusTxt);
+    this.setState({ activity: false });
   };
   render() {
     return (
@@ -44,22 +82,17 @@ class Chatscreen extends React.Component {
         <FlatList
           data={[...this.state.messages].reverse()}
           renderItem={({ item }) => (
-            <Message from={item.from} text={item.text} sent={item.sent} />
+            <Message
+              from={item.user_id}
+              text={item.text}
+              sent={item.user_id === this.state.id}
+            />
           )}
           keyExtractor={this._keyExtractor}
           style={styles.page}
           inverted
         />
-        <InputArea
-          onSend={text => {
-            this.setState({
-              messages: [
-                ...this.state.messages,
-                { from: "Rajat", text: text, sent: true }
-              ]
-            });
-          }}
-        />
+        <InputArea onSend={text => this.sendMessage(text)} />
       </KeyboardAvoidingView>
     );
   }

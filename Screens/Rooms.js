@@ -1,11 +1,73 @@
 import React from "react";
-import { TouchableOpacity, View, Text, StyleSheet } from "react-native";
+import {
+  TouchableOpacity,
+  View,
+  Text,
+  StyleSheet,
+  AsyncStorage
+} from "react-native";
+import credentials from "../credentials";
+import requestApi from "../requestApi";
 class Rooms extends React.Component {
   static navigationOptions = {
     title: "Rooms"
   };
   state = {
-    rooms: [{ id: 123, name: "R1" }, { id: 255, name: "R2" }]
+    id: this.props.navigation.getParam("id"),
+    name: this.props.navigation.getParam("name"),
+    rooms: [],
+    access_token: null
+  };
+  getRoomsLocal = async () => {
+    let rooms = await AsyncStorage.getItem("rooms-" + this.state.id);
+    if (rooms) this.setState({ rooms: JSON.parse(rooms) });
+  };
+  getRooms = async () => {
+    const url = credentials.SERVER_URL + "/getRoomsByUser";
+    const data = {
+      instanceLocator: credentials.INSTANCE_LOCATOR,
+      key: credentials.SECRET_KEY,
+      id: this.state.id
+    };
+    const response = await requestApi(url, data);
+    const result = await response.json();
+    if (response.ok) this.setState({ rooms: result });
+    else alert(result);
+  };
+  getAuth = async () => {
+    const url = credentials.SERVER_URL + "/auth";
+    const data = {
+      instanceLocator: credentials.INSTANCE_LOCATOR,
+      key: credentials.SECRET_KEY,
+      id: this.state.id
+    };
+    const response = await requestApi(url, data);
+    const result = await response.json();
+    if (response.ok) this.setState({ access_token: result.access_token });
+    else alert(result);
+  };
+  componentDidMount = async () => {
+    let authUser = await AsyncStorage.getItem("user-auth");
+    if (authUser) {
+      authUser = JSON.parse(authUser);
+      this.setState({ id: authUser.id, name: authUser.name });
+    } else {
+      await this.getAuth();
+      const userAuth = {
+        id: this.state.id,
+        name: this.state.name,
+        access_token: this.state.access_token
+      };
+      await AsyncStorage.setItem("user-auth", JSON.stringify(userAuth));
+    }
+    await this.getRoomsLocal();
+    if (this.state.rooms.length == 0) {
+      await this.getRooms();
+      await AsyncStorage.setItem(
+        "rooms-" + this.state.id,
+        JSON.stringify(this.state.rooms)
+      );
+    }
   };
   render() {
     return (
@@ -18,7 +80,10 @@ class Rooms extends React.Component {
               onPress={() =>
                 this.props.navigation.navigate("ChatScreen", {
                   roomName: room.name,
-                  roomId: room.name
+                  roomId: room.id,
+                  id: this.state.id,
+                  name: this.state.name,
+                  access_token: this.state.access_token
                 })
               }
             >

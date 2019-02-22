@@ -1,5 +1,6 @@
 import React from "react";
-import { TouchableOpacity, Text, StyleSheet } from "react-native";
+import { TouchableOpacity, Text, StyleSheet, View } from "react-native";
+import { Icon } from "expo";
 export default class Message extends React.Component {
   constructor(props) {
     super(props);
@@ -7,22 +8,34 @@ export default class Message extends React.Component {
   render() {
     const finalStyle = this.props.sent ? styles2 : styles;
     return (
-      <TouchableOpacity style={finalStyle.container}>
-        <Text style={finalStyle.from}>{this.props.from}</Text>
-        <Text style={finalStyle.text}>{this.props.text}</Text>
-      </TouchableOpacity>
+      <View style={finalStyle.outer}>
+        <TouchableOpacity style={finalStyle.container}>
+          <Text style={finalStyle.from}>{this.props.from}</Text>
+          <Text style={finalStyle.text}>{this.props.text}</Text>
+        </TouchableOpacity>
+        {this.props.sent === true && (
+          <Icon.FontAwesome name="check-circle" size={20} />
+        )}
+      </View>
     );
   }
 }
 const styles = StyleSheet.create({
+  outer: {
+    flex: 0,
+    flexDirection: "row",
+    margin: 5,
+    width: "75%",
+    alignItems: "center",
+    justifyContent: "space-evenly"
+  },
   container: {
     flex: 0,
     padding: 8,
-    margin: 5,
     backgroundColor: "#22AA00",
     borderRadius: 10,
     borderBottomLeftRadius: 0,
-    width: "75%"
+    width: "93%"
   },
   from: {
     color: "#ff9",
@@ -35,15 +48,22 @@ const styles = StyleSheet.create({
   }
 });
 const styles2 = StyleSheet.create({
+  outer: {
+    flex: 0,
+    flexDirection: "row",
+    margin: 5,
+    marginLeft: "25%",
+    width: "75%",
+    alignItems: "center",
+    justifyContent: "space-evenly"
+  },
   container: {
     flex: 0,
     padding: 8,
-    margin: 5,
-    marginLeft: "25%",
     backgroundColor: "#AA2200",
     borderRadius: 10,
     borderBottomRightRadius: 0,
-    width: "75%"
+    width: "93%"
   },
   from: {
     color: "#9ff",
