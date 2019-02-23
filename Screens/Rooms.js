@@ -4,19 +4,101 @@ import {
   View,
   Text,
   StyleSheet,
-  AsyncStorage
+  AsyncStorage,
+  FlatList
 } from "react-native";
+import { Icon } from "expo";
 import credentials from "../credentials";
 import requestApi from "../requestApi";
+import Prompt from "rn-prompt";
+import ActionButton from "react-native-action-button";
 class Rooms extends React.Component {
-  static navigationOptions = {
-    title: "Rooms"
+  static navigationOptions = ({ navigation }) => {
+    return {
+      title: "Rooms: [" + navigation.getParam("name", "Admin") + "]"
+    };
   };
   state = {
     id: this.props.navigation.getParam("id"),
     name: this.props.navigation.getParam("name"),
     rooms: [],
-    access_token: null
+    access_token: null,
+    prompt: {
+      title: "New Room",
+      placeholder: "Enter A New Room Name",
+      onSubmit: () => this.setState({ promptVisible: false }),
+      onCancel: () => this.setState({ promptVisible: false })
+    },
+    promptVisible: false
+  };
+  showPrompt = title => {
+    if (title === "New Room") {
+      const prompt = {
+        title: title,
+        placeholder: "Enter A New Room Name",
+        onSubmit: async value => {
+          const url = credentials.CHATKIT_API + "/rooms";
+          const response = await fetch(url, {
+            method: "POST",
+            mode: "cors",
+            headers: {
+              Authorization: "Bearer " + this.state.access_token,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              name: value,
+              user_ids: [this.state.id],
+              private: false
+            })
+          });
+          if (response.ok) {
+            const newRoom = await response.json();
+            this.setState({
+              rooms: [...this.state.rooms, newRoom],
+              promptVisible: false
+            });
+          } else {
+            alert("error: " + response.status);
+            this.setState({ promptVisible: false });
+          }
+        },
+        onCancel: () => this.setState({ promptVisible: false })
+      };
+      this.setState({ prompt: prompt, promptVisible: true });
+    } else if (title === "Private Chat with a new User") {
+      const prompt = {
+        title: title,
+        placeholder: "Enter the username to chat with",
+        onSubmit: async value => {
+          const url = credentials.CHATKIT_API + "/rooms";
+          const response = await fetch(url, {
+            method: "POST",
+            mode: "cors",
+            headers: {
+              Authorization: "Bearer " + this.state.access_token,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              name: this.state.id + " & " + value,
+              user_ids: [this.state.id, value],
+              private: true
+            })
+          });
+          if (response.ok) {
+            const newRoom = await response.json();
+            this.setState({
+              rooms: [...this.state.rooms, newRoom],
+              promptVisible: false
+            });
+          } else {
+            alert("error: Invalid Username >> " + response.status);
+            this.setState({ promptVisible: false });
+          }
+        },
+        onCancel: () => this.setState({ promptVisible: false })
+      };
+      this.setState({ prompt: prompt, promptVisible: true });
+    }
   };
   getRoomsLocal = async () => {
     let rooms = await AsyncStorage.getItem("rooms-" + this.state.id);
@@ -50,7 +132,12 @@ class Rooms extends React.Component {
     let authUser = await AsyncStorage.getItem("user-auth");
     if (authUser) {
       authUser = JSON.parse(authUser);
-      this.setState({ id: authUser.id, name: authUser.name });
+      this.setState({
+        id: authUser.id,
+        name: authUser.name,
+        access_token: authUser.access_token
+      });
+      this.props.navigation.setParams({ name: authUser.name });
     } else {
       await this.getAuth();
       const userAuth = {
@@ -61,41 +148,115 @@ class Rooms extends React.Component {
       await AsyncStorage.setItem("user-auth", JSON.stringify(userAuth));
     }
     await this.getRoomsLocal();
-    if (this.state.rooms.length == 0) {
-      await this.getRooms();
-      await AsyncStorage.setItem(
-        "rooms-" + this.state.id,
-        JSON.stringify(this.state.rooms)
-      );
-    }
+    await this.getRooms();
+    await AsyncStorage.setItem(
+      "rooms-" + this.state.id,
+      JSON.stringify(this.state.rooms)
+    );
   };
   render() {
     return (
-      <View>
-        {this.state.rooms.map(room => {
-          return (
+      <View style={styles.container}>
+        <FlatList
+          keyExtractor={(item, index) => "" + index}
+          data={this.state.rooms}
+          renderItem={({ item }) => (
             <TouchableOpacity
-              key={room.id}
+              key={item.id}
               style={styles.roomContainer}
               onPress={() =>
                 this.props.navigation.navigate("ChatScreen", {
-                  roomName: room.name,
-                  roomId: room.id,
+                  roomName: item.name,
+                  roomId: item.id,
                   id: this.state.id,
                   name: this.state.name,
                   access_token: this.state.access_token
                 })
               }
             >
-              <Text style={styles.txt}>#{room.name}</Text>
+              <Text style={styles.txt}>#{item.name}</Text>
             </TouchableOpacity>
-          );
-        })}
+          )}
+        />
+        <Prompt
+          title={this.state.prompt.title}
+          placeholder={this.state.prompt.placeholder}
+          visible={this.state.promptVisible}
+          onSubmit={value => this.state.prompt.onSubmit(value)}
+          onCancel={this.state.prompt.onCancel}
+        />
+        <ActionButton
+          buttonColor="rgba(120,120,120,0.8)"
+          renderIcon={active => {
+            if (active)
+              return <Icon.Ionicons name="md-add" size={30} color="#fff" />;
+            else return <Icon.Ionicons name="md-menu" size={30} color="#fff" />;
+          }}
+        >
+          <ActionButton.Item
+            buttonColor="#9b59b6"
+            title="Create New Room"
+            onPress={() => this.showPrompt("New Room")}
+          >
+            <Icon.Ionicons
+              name="md-add-circle"
+              size={30}
+              style={styles.actionButtonIcon}
+            />
+          </ActionButton.Item>
+          <ActionButton.Item
+            buttonColor="#3498db"
+            title="Join A Room"
+            onPress={() => {
+              this.props.navigation.navigate("JoinRooms", {
+                id: this.state.id,
+                access_token: this.state.access_token,
+                name: this.state.name
+              });
+            }}
+          >
+            <Icon.Ionicons
+              name="md-chatbubbles"
+              size={30}
+              style={styles.actionButtonIcon}
+            />
+          </ActionButton.Item>
+          <ActionButton.Item
+            buttonColor="#1abc9c"
+            title="Private Chat with a new User"
+            onPress={() => {
+              this.showPrompt("Private Chat with a new User");
+            }}
+          >
+            <Icon.Ionicons
+              name="md-person-add"
+              size={30}
+              style={styles.actionButtonIcon}
+            />
+          </ActionButton.Item>
+          <ActionButton.Item
+            buttonColor="#770000"
+            title="Log out"
+            onPress={async () => {
+              await AsyncStorage.removeItem("user-auth");
+              this.props.navigation.navigate("login");
+            }}
+          >
+            <Icon.Ionicons
+              name="md-exit"
+              size={30}
+              style={styles.actionButtonIcon}
+            />
+          </ActionButton.Item>
+        </ActionButton>
       </View>
     );
   }
 }
 const styles = StyleSheet.create({
+  container: {
+    flex: 1
+  },
   roomContainer: {
     flex: 0,
     padding: 20,
@@ -107,6 +268,9 @@ const styles = StyleSheet.create({
   txt: {
     fontSize: 20,
     color: "maroon"
+  },
+  actionButtonIcon: {
+    color: "#fff"
   }
 });
 export default Rooms;

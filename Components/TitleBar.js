@@ -9,7 +9,7 @@ export default () => {
         alignItems: "center",
         justifyContent: "center",
         width: "100%",
-        backgroundColor: "#252",
+        backgroundColor: "#222265",
         padding: 4,
         paddingTop: 40
       }}

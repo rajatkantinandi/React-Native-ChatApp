@@ -1,5 +1,7 @@
 import React from "react";
 import { View, TextInput, StyleSheet, TouchableOpacity } from "react-native";
+import OptionsMenu from "react-native-options-menu";
+const MenuIcon = require("../assets/menu.png");
 import { Icon } from "expo";
 export default class InputArea extends React.Component {
   constructor(props) {
@@ -9,12 +11,27 @@ export default class InputArea extends React.Component {
     text: ""
   };
   onSend = () => {
-    this.props.onSend(this.state.text);
-    this.setState({ text: "" });
+    if (this.state.text === "") alert("Message can't be empty!");
+    else {
+      this.props.onSend(this.state.text);
+      this.setState({ text: "" });
+    }
   };
   render() {
     return (
       <View style={styles.container}>
+        <OptionsMenu
+          button={MenuIcon}
+          buttonStyle={{
+            width: 50,
+            height: 50,
+            resizeMode: "contain",
+            backgroundColor: "#fff"
+          }}
+          destructiveIndex={1}
+          options={["Add User to Room", "leave Room"]}
+          actions={[this.addUser, this.leaveRoom]}
+        />
         <TextInput
           placeholder="Type something..."
           onChangeText={text => this.setState({ text })}
@@ -37,7 +54,7 @@ const styles = StyleSheet.create({
   },
   txt: {
     padding: 10,
-    width: "85%",
+    width: "70%",
     height: 60,
     borderRadius: 20,
     borderColor: "#225",

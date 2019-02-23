@@ -1,10 +1,5 @@
 import React from "react";
-import {
-  KeyboardAvoidingView,
-  FlatList,
-  StyleSheet,
-  AsyncStorage
-} from "react-native";
+import { View, FlatList, StyleSheet, AsyncStorage } from "react-native";
 import Message from "../Components/Message";
 import InputArea from "../Components/InputArea";
 import credentials from "../credentials";
@@ -35,21 +30,32 @@ class Chatscreen extends React.Component {
     );
   };
   sendMessage = async text => {
-    const url = credentials.SERVER_URL + "/sendMessage";
+    const url =
+      credentials.CHATKIT_API + "/rooms/" + this.state.roomId + "/messages";
     const data = {
-      instanceLocator: credentials.INSTANCE_LOCATOR,
-      key: credentials.SECRET_KEY,
-      roomId: this.state.roomId,
-      id: this.state.id,
       text: text
     };
     this.setState({
       messages: [...this.state.messages, { user_id: this.state.id, text: text }]
     });
-    const response = await requestApi(url, data);
+    const response = await fetch(url, {
+      method: "POST",
+      mode: "cors",
+      headers: {
+        Authorization:
+          "Bearer " + this.props.navigation.getParam("access_token"),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data)
+    });
     const result = await response.json();
-    if (response.ok) alert("Message id: " + result.messageId);
-    else alert(response.statusTxt);
+    if (response.ok) {
+      let messages = this.state.messages;
+      let newMsg = messages.pop();
+      newMsg.id = result.message_id;
+      messages.push(newMsg);
+      this.setState({ messages });
+    } else alert(response.statusTxt);
   };
   getAllMessagesLocal = async () => {
     let messages = await AsyncStorage.getItem("room:" + this.state.roomId);
@@ -73,12 +79,7 @@ class Chatscreen extends React.Component {
   };
   render() {
     return (
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior="padding"
-        keyboardVerticalOffset={80}
-        enabled
-      >
+      <View style={styles.container}>
         <FlatList
           data={[...this.state.messages].reverse()}
           renderItem={({ item }) => (
@@ -86,6 +87,7 @@ class Chatscreen extends React.Component {
               from={item.user_id}
               text={item.text}
               sent={item.user_id === this.state.id}
+              posted={item.hasOwnProperty("id")}
             />
           )}
           keyExtractor={this._keyExtractor}
@@ -93,7 +95,7 @@ class Chatscreen extends React.Component {
           inverted
         />
         <InputArea onSend={text => this.sendMessage(text)} />
-      </KeyboardAvoidingView>
+      </View>
     );
   }
 }
@@ -107,8 +109,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 10,
     backgroundColor: "#fee",
-    zIndex: 1,
-    height: 100
+    zIndex: 1
   }
 });
 export default Chatscreen;

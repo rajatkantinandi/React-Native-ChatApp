@@ -9,11 +9,13 @@ import { AsyncStorage } from "react-native";
 import { AppLoading, Asset } from "expo";
 import ChatScreen from "./Screens/Chatscreen";
 import Rooms from "./Screens/Rooms";
+import JoinRooms from "./Screens/JoinRooms";
 import SignUpScreen from "./Screens/SignUpScreen";
 import SignInScreen from "./Screens/SignInScreen";
 const Screens = createStackNavigator(
   {
     Rooms: { screen: Rooms },
+    JoinRooms: { screen: JoinRooms },
     ChatScreen: { screen: ChatScreen }
   },
   {

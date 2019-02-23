@@ -13,9 +13,12 @@ export default class Message extends React.Component {
           <Text style={finalStyle.from}>{this.props.from}</Text>
           <Text style={finalStyle.text}>{this.props.text}</Text>
         </TouchableOpacity>
-        {this.props.sent === true && (
-          <Icon.FontAwesome name="check-circle" size={20} />
-        )}
+        {this.props.sent &&
+          (this.props.posted ? (
+            <Icon.FontAwesome name="check-circle" size={20} />
+          ) : (
+            <Icon.FontAwesome name="spinner" size={20} />
+          ))}
       </View>
     );
   }
