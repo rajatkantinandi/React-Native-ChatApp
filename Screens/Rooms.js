@@ -57,6 +57,13 @@ class Rooms extends React.Component {
               rooms: [...this.state.rooms, newRoom],
               promptVisible: false
             });
+            this.props.navigation.navigate("ChatScreen", {
+              roomName: newRoom.name,
+              roomId: newRoom.id,
+              id: this.state.id,
+              name: this.state.name,
+              access_token: this.state.access_token
+            });
           } else {
             alert("error: " + response.status);
             this.setState({ promptVisible: false });
@@ -89,6 +96,13 @@ class Rooms extends React.Component {
             this.setState({
               rooms: [...this.state.rooms, newRoom],
               promptVisible: false
+            });
+            this.props.navigation.navigate("ChatScreen", {
+              roomName: newRoom.name,
+              roomId: newRoom.id,
+              id: this.state.id,
+              name: this.state.name,
+              access_token: this.state.access_token
             });
           } else {
             alert("error: Invalid Username >> " + response.status);

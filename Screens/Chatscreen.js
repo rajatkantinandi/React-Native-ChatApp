@@ -4,6 +4,10 @@ import Message from "../Components/Message";
 import InputArea from "../Components/InputArea";
 import credentials from "../credentials";
 import requestApi from "../requestApi";
+import {
+  ChatManager,
+  TokenProvider
+} from "@pusher/chatkit-client/react-native";
 class Chatscreen extends React.Component {
   static navigationOptions = ({ navigation }) => {
     return {
@@ -21,7 +25,29 @@ class Chatscreen extends React.Component {
   _keyExtractor = (item, index) => "" + index;
   componentDidMount = async () => {
     await this.getAllMessagesLocal();
-    await this.getAllMessages();
+    const chatManager = new ChatManager({
+      instanceLocator: credentials.INSTANCE_LOCATOR,
+      userId: this.state.id,
+      tokenProvider: new TokenProvider({
+        url: credentials.SERVER_URL + "/tokenProvider"
+      })
+    });
+    chatManager
+      .connect()
+      .then(currentUser => {
+        currentUser.subscribeToRoom({
+          roomId: this.state.roomId,
+          hooks: {
+            onMessage: message => {
+              this.getAllMessages();
+            }
+          },
+          messageLimit: 1
+        });
+      })
+      .catch(err => {
+        alert("Error on connection: " + JSON.stringify(err));
+      });
   };
   componentDidUpdate = async () => {
     await AsyncStorage.setItem(
@@ -48,13 +74,8 @@ class Chatscreen extends React.Component {
       },
       body: JSON.stringify(data)
     });
-    const result = await response.json();
     if (response.ok) {
-      let messages = this.state.messages;
-      let newMsg = messages.pop();
-      newMsg.id = result.message_id;
-      messages.push(newMsg);
-      this.setState({ messages });
+      console.log("done");
     } else alert(response.statusTxt);
   };
   getAllMessagesLocal = async () => {
