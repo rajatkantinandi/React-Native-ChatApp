@@ -1,8 +1,9 @@
 import React from "react";
-import { View, FlatList, StyleSheet, AsyncStorage } from "react-native";
+import { View, FlatList, StyleSheet, AsyncStorage, Alert } from "react-native";
 import Message from "../Components/Message";
 import InputArea from "../Components/InputArea";
 import credentials from "../credentials";
+import Prompt from "rn-prompt";
 import requestApi from "../requestApi";
 import {
   ChatManager,
@@ -18,9 +19,12 @@ class Chatscreen extends React.Component {
     name: this.props.navigation.getParam("name"),
     id: this.props.navigation.getParam("id"),
     messages: [],
-    roomName: this.props.navigation.getParam("roomName") | "Default",
+    roomName: this.props.navigation.getParam("roomName"),
     roomId: this.props.navigation.getParam("roomId"),
-    activity: true
+    activity: true,
+    currentUser: null,
+    promptAddUserVisible: false,
+    promptRenameVisible: false
   };
   _keyExtractor = (item, index) => "" + index;
   componentDidMount = async () => {
@@ -32,22 +36,21 @@ class Chatscreen extends React.Component {
         url: credentials.SERVER_URL + "/tokenProvider"
       })
     });
-    chatManager
-      .connect()
-      .then(currentUser => {
-        currentUser.subscribeToRoom({
-          roomId: this.state.roomId,
-          hooks: {
-            onMessage: message => {
-              this.getAllMessages();
-            }
-          },
-          messageLimit: 1
-        });
-      })
-      .catch(err => {
-        alert("Error on connection: " + JSON.stringify(err));
+    const currentUser = await chatManager.connect();
+    await this.setState({ currentUser });
+    try {
+      this.state.currentUser.subscribeToRoom({
+        roomId: this.state.roomId,
+        hooks: {
+          onMessage: message => {
+            this.getAllMessages();
+          }
+        },
+        messageLimit: 1
       });
+    } catch (err) {
+      alert("Error on connection: " + JSON.stringify(err));
+    }
   };
   componentDidUpdate = async () => {
     await AsyncStorage.setItem(
@@ -56,27 +59,23 @@ class Chatscreen extends React.Component {
     );
   };
   sendMessage = async text => {
-    const url =
-      credentials.CHATKIT_API + "/rooms/" + this.state.roomId + "/messages";
-    const data = {
-      text: text
-    };
-    this.setState({
-      messages: [...this.state.messages, { user_id: this.state.id, text: text }]
-    });
-    const response = await fetch(url, {
-      method: "POST",
-      mode: "cors",
-      headers: {
-        Authorization:
-          "Bearer " + this.props.navigation.getParam("access_token"),
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(data)
-    });
-    if (response.ok) {
-      console.log("done");
-    } else alert(response.statusTxt);
+    if (this.state.currentUser) {
+      this.setState({
+        messages: [
+          ...this.state.messages,
+          { user_id: this.state.id, text: text }
+        ]
+      });
+      const messageId = await this.state.currentUser.sendMessage({
+        text: text,
+        roomId: this.state.roomId
+      });
+      try {
+        console.log(`Added message: ` + messageId);
+      } catch (err) {
+        console.log(`Error adding message : ${err}`);
+      }
+    }
   };
   getAllMessagesLocal = async () => {
     let messages = await AsyncStorage.getItem("room:" + this.state.roomId);
@@ -98,6 +97,66 @@ class Chatscreen extends React.Component {
     else alert(response.statusTxt);
     this.setState({ activity: false });
   };
+  leaveRoom = () => {
+    Alert.alert(
+      "Leave Room ?",
+      'Are you sure to leave "' +
+        this.state.roomName +
+        "\" room?\nThis action can't be undone",
+      [
+        {
+          text: "Yes",
+          onPress: () => {
+            if (this.state.currentUser) {
+              this.state.currentUser
+                .leaveRoom({ roomId: this.state.roomId })
+                .then(room => {
+                  this.props.navigation.goBack();
+                })
+                .catch(err => {
+                  console.log(`Error leaving room ${someRoomID}: ${err}`);
+                });
+            }
+          }
+        },
+        {
+          text: "No",
+          onPress: () => console.log("Cancel Pressed"),
+          style: "cancel"
+        }
+      ],
+      { cancelable: false }
+    );
+  };
+  addUser = userId => {
+    if (this.state.currentUser) {
+      this.state.currentUser
+        .addUserToRoom({ userId: userId, roomId: this.state.roomId })
+        .then(() => {
+          this.setState({ promptAddUserVisible: false });
+          alert("Added " + userId + " to room: " + this.state.roomName);
+        })
+        .catch(err => {
+          alert(`Error : UserID does not exist`);
+        });
+    }
+  };
+  renameRoom = newName => {
+    if (this.state.currentUser) {
+      this.state.currentUser
+        .updateRoom({
+          roomId: this.state.roomId,
+          name: newName
+        })
+        .then(() => {
+          this.setState({ roomName: newName, promptRenameVisible: false });
+          this.props.navigation.setParams({ roomName: newName });
+        })
+        .catch(err => {
+          console.log(`Error updated room ${someRoomID}: ${err}`);
+        });
+    }
+  };
   render() {
     return (
       <View style={styles.container}>
@@ -115,7 +174,26 @@ class Chatscreen extends React.Component {
           style={styles.page}
           inverted
         />
-        <InputArea onSend={text => this.sendMessage(text)} />
+        <Prompt
+          title="Rename this Room"
+          placeholder="Enter new Room Name"
+          visible={this.state.promptRenameVisible}
+          onSubmit={value => this.renameRoom(value)}
+          onCancel={() => this.setState({ promptRenameVisible: false })}
+        />
+        <Prompt
+          title="Add a new User to this Room"
+          placeholder="Enter User Id"
+          visible={this.state.promptAddUserVisible}
+          onSubmit={value => this.addUser(value)}
+          onCancel={() => this.setState({ promptAddUserVisible: false })}
+        />
+        <InputArea
+          onSend={text => this.sendMessage(text)}
+          leaveRoom={this.leaveRoom}
+          renameRoom={() => this.setState({ promptRenameVisible: true })}
+          addUser={() => this.setState({ promptAddUserVisible: true })}
+        />
       </View>
     );
   }

@@ -5,13 +5,18 @@ import {
   Text,
   StyleSheet,
   AsyncStorage,
-  FlatList
+  FlatList,
+  Alert
 } from "react-native";
 import { Icon } from "expo";
 import credentials from "../credentials";
 import requestApi from "../requestApi";
 import Prompt from "rn-prompt";
 import ActionButton from "react-native-action-button";
+import {
+  ChatManager,
+  TokenProvider
+} from "@pusher/chatkit-client/react-native";
 class Rooms extends React.Component {
   static navigationOptions = ({ navigation }) => {
     return {
@@ -162,6 +167,57 @@ class Rooms extends React.Component {
       await AsyncStorage.setItem("user-auth", JSON.stringify(userAuth));
     }
     await this.getRoomsLocal();
+    const chatManager = new ChatManager({
+      instanceLocator: credentials.INSTANCE_LOCATOR,
+      userId: this.state.id,
+      tokenProvider: new TokenProvider({
+        url: credentials.SERVER_URL + "/tokenProvider"
+      })
+    });
+    const currentUser = await chatManager.connect({
+      onAddedToRoom: room => {
+        this.setState({ rooms: [...this.state.rooms, room] });
+        Alert.alert(
+          "Added to new Room",
+          "You are added to the room: " + room.name,
+          [
+            {
+              text: "Switch to the room",
+              onPress: () =>
+                this.props.navigation.navigate("ChatScreen", {
+                  roomName: room.name,
+                  roomId: room.id,
+                  id: this.state.id,
+                  name: this.state.name,
+                  access_token: this.state.access_token
+                })
+            },
+            {
+              text: "Cancel",
+              onPress: () => console.log("Cancel Pressed"),
+              style: "cancel"
+            }
+          ],
+          { cancelable: false }
+        );
+      },
+      onRemovedFromRoom: removedRoom => {
+        this.setState({
+          rooms: this.state.rooms.filter(room => room.id !== removedRoom.id)
+        });
+        alert("You are removed from room: " + removedRoom.name);
+      },
+      onRoomUpdated: updatedRoom => {
+        this.setState({
+          rooms: this.state.rooms.map(room => {
+            if (room.id === updatedRoom.id) {
+              return updatedRoom;
+            } else return room;
+          })
+        });
+      }
+    });
+    alert("connected");
     await this.getRooms();
     await AsyncStorage.setItem(
       "rooms-" + this.state.id,

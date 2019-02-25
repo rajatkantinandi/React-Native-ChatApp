@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import credentials from "../credentials";
 import requestApi from "../requestApi";
+import { ChatManager, TokenProvider } from "@pusher/chatkit-client";
 class Rooms extends React.Component {
   static navigationOptions = {
     title: "Joinable Rooms"
@@ -17,7 +18,8 @@ class Rooms extends React.Component {
     id: this.props.navigation.getParam("id"),
     name: this.props.navigation.getParam("name"),
     rooms: [],
-    access_token: this.props.navigation.getParam("access_token")
+    access_token: this.props.navigation.getParam("access_token"),
+    currentUser: null
   };
   getRoomsLocal = async () => {
     let rooms = await AsyncStorage.getItem("joinableRooms-" + this.state.id);
@@ -36,41 +38,33 @@ class Rooms extends React.Component {
     else alert(result);
   };
   joinRoom = async (roomId, name) => {
-    const url =
-      credentials.CHATKIT_API +
-      "/users/" +
-      this.state.id +
-      "/rooms/" +
-      roomId +
-      "/join";
-    const response = await fetch(url, {
-      method: "POST",
-      mode: "cors",
-      headers: {
-        Authorization: "Bearer " + this.state.access_token,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({})
-    });
-    if (response.ok) {
-      let rooms = this.state.rooms;
-      rooms = rooms.filter(room => room.id !== roomId);
-      this.setState({ rooms });
-      await AsyncStorage.setItem(
-        "joinableRooms-" + this.state.id,
-        JSON.stringify(rooms)
-      );
-      this.props.navigation.navigate("ChatScreen", {
-        roomName: name,
-        roomId: roomId,
-        id: this.state.id,
-        name: this.state.name,
-        access_token: this.state.access_token
-      });
-    } else alert("Error Joining: " + response.status);
+    if (this.state.currentUser) {
+      await this.state.currentUser.joinRoom({ roomId: roomId });
+      try {
+        await this.setState({
+          rooms: this.state.rooms.filter(room => room.id !== roomId)
+        });
+        await AsyncStorage.setItem(
+          "joinableRooms-" + this.state.id,
+          JSON.stringify(this.state.rooms)
+        );
+        this.props.navigation.goBack();
+      } catch (err) {
+        console.log(`Error joining room ${name}: ${err}`);
+      }
+    }
   };
   componentDidMount = async () => {
     await this.getRoomsLocal();
+    const chatManager = new ChatManager({
+      instanceLocator: credentials.INSTANCE_LOCATOR,
+      userId: this.state.id,
+      tokenProvider: new TokenProvider({
+        url: credentials.SERVER_URL + "/tokenProvider"
+      })
+    });
+    const currentUser = await chatManager.connect();
+    await this.setState({ currentUser });
     await this.getRooms();
     await AsyncStorage.setItem(
       "joinableRooms-" + this.state.id,

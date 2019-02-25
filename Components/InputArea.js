@@ -29,8 +29,12 @@ export default class InputArea extends React.Component {
             backgroundColor: "#fff"
           }}
           destructiveIndex={1}
-          options={["Add User to Room", "leave Room"]}
-          actions={[this.addUser, this.leaveRoom]}
+          options={["Add User to Room", "Rename this Room", "leave Room"]}
+          actions={[
+            this.props.addUser,
+            this.props.renameRoom,
+            this.props.leaveRoom
+          ]}
         />
         <TextInput
           placeholder="Type something..."
