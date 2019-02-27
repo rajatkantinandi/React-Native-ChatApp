@@ -34,7 +34,8 @@ class Rooms extends React.Component {
       onSubmit: () => this.setState({ promptVisible: false }),
       onCancel: () => this.setState({ promptVisible: false })
     },
-    promptVisible: false
+    promptVisible: false,
+    token: this.props.navigation.getParam("token")
   };
   showPrompt = title => {
     if (title === "New Room") {
@@ -147,6 +148,20 @@ class Rooms extends React.Component {
     if (response.ok) this.setState({ access_token: result.access_token });
     else alert(result);
   };
+  signOut = async () => {
+    const url = credentials.SERVER_URL + "/signout";
+    const data = {
+      id: this.state.id,
+      token: this.state.token,
+      instanceLocator: credentials.INSTANCE_LOCATOR,
+      key: credentials.SECRET_KEY
+    };
+    const response = await requestApi(url, data);
+    if (response.ok) {
+      await AsyncStorage.removeItem("user-auth");
+      this.props.navigation.navigate("login");
+    } else alert("Unable to log out");
+  };
   componentDidMount = async () => {
     let authUser = await AsyncStorage.getItem("user-auth");
     if (authUser) {
@@ -154,7 +169,8 @@ class Rooms extends React.Component {
       this.setState({
         id: authUser.id,
         name: authUser.name,
-        access_token: authUser.access_token
+        access_token: authUser.access_token,
+        token: authUser.token
       });
       this.props.navigation.setParams({ name: authUser.name });
     } else {
@@ -162,7 +178,8 @@ class Rooms extends React.Component {
       const userAuth = {
         id: this.state.id,
         name: this.state.name,
-        access_token: this.state.access_token
+        access_token: this.state.access_token,
+        token: this.state.token
       };
       await AsyncStorage.setItem("user-auth", JSON.stringify(userAuth));
     }
@@ -241,8 +258,7 @@ class Rooms extends React.Component {
                   id: this.state.id,
                   name: this.state.name,
                   access_token: this.state.access_token
-                })
-              }
+                })}
             >
               <Text style={styles.txt}>#{item.name}</Text>
             </TouchableOpacity>
@@ -307,10 +323,7 @@ class Rooms extends React.Component {
           <ActionButton.Item
             buttonColor="#770000"
             title="Log out"
-            onPress={async () => {
-              await AsyncStorage.removeItem("user-auth");
-              this.props.navigation.navigate("login");
-            }}
+            onPress={() => this.signOut()}
           >
             <Icon.Ionicons
               name="md-exit"

@@ -36,8 +36,8 @@ export default class SignInScreen extends React.Component {
     }
 
     // Get the token that uniquely identifies this device
-    let token = await Notifications.getExpoPushTokenAsync();
-    return token;
+    // let token = await Notifications.getExpoPushTokenAsync();
+    return "Expo token 3";
   };
   signinAction = async () => {
     const { username, password } = this.state;
@@ -58,7 +58,8 @@ export default class SignInScreen extends React.Component {
       const response = await requestApi(url, data);
       const result = await response.json();
       this.setState({ activity: false });
-      if (response.ok) this.props.navigation.navigate("Rooms", result);
+      if (response.ok)
+        this.props.navigation.navigate("Rooms", { ...result, token });
       else alert(response.status);
     }
   };
