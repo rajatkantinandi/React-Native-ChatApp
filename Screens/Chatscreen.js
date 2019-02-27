@@ -59,22 +59,23 @@ class Chatscreen extends React.Component {
     );
   };
   sendMessage = async text => {
-    if (this.state.currentUser) {
-      this.setState({
-        messages: [
-          ...this.state.messages,
-          { user_id: this.state.id, text: text }
-        ]
-      });
-      const messageId = await this.state.currentUser.sendMessage({
-        text: text,
-        roomId: this.state.roomId
-      });
-      try {
-        console.log(`Added message: ` + messageId);
-      } catch (err) {
-        console.log(`Error adding message : ${err}`);
-      }
+    this.setState({
+      messages: [...this.state.messages, { user_id: this.state.id, text: text }]
+    });
+    const url = credentials.SERVER_URL + "/sendMessage";
+    const data = {
+      instanceLocator: credentials.INSTANCE_LOCATOR,
+      key: credentials.SECRET_KEY,
+      roomId: this.state.roomId,
+      id: this.state.id,
+      text: text
+    };
+    const response = await requestApi(url, data);
+    if (response.ok) {
+      const message = await response.json();
+      console.log(`Added message: ` + message.messageId);
+    } else {
+      console.log(`Error adding message : ${response.statusText}`);
     }
   };
   getAllMessagesLocal = async () => {
@@ -86,15 +87,24 @@ class Chatscreen extends React.Component {
   };
   getAllMessages = async () => {
     const url = credentials.SERVER_URL + "/getRoomMessages";
+    const sentMessages = this.state.messages.filter(message =>
+      message.hasOwnProperty("id")
+    );
+    const initialId =
+      sentMessages.length > 0 ? sentMessages[sentMessages.length - 1].id : null;
     const data = {
       instanceLocator: credentials.INSTANCE_LOCATOR,
       key: credentials.SECRET_KEY,
-      roomId: this.state.roomId
+      roomId: this.state.roomId,
+      initialId: initialId
     };
     const response = await requestApi(url, data);
     const result = await response.json();
-    if (response.ok) this.setState({ messages: result });
-    else alert(response.statusTxt);
+    if (response.ok) {
+      const messages = [...sentMessages, ...result];
+      console.log(JSON.stringify(result));
+      this.setState({ messages });
+    } else alert(response.statusTxt);
     this.setState({ activity: false });
   };
   leaveRoom = () => {
