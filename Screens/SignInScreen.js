@@ -36,8 +36,8 @@ export default class SignInScreen extends React.Component {
     }
 
     // Get the token that uniquely identifies this device
-    // let token = await Notifications.getExpoPushTokenAsync();
-    return "Expo token 3";
+    let token = await Notifications.getExpoPushTokenAsync();
+    return token;
   };
   signinAction = async () => {
     const { username, password } = this.state;
