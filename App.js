@@ -6,7 +6,7 @@ import {
   createBottomTabNavigator
 } from "react-navigation";
 import { AsyncStorage } from "react-native";
-import { AppLoading, Asset } from "expo";
+import { AppLoading, Asset, Icon } from "expo";
 import ChatScreen from "./Screens/Chatscreen";
 import Rooms from "./Screens/Rooms";
 import JoinRooms from "./Screens/JoinRooms";
@@ -19,7 +19,20 @@ const Screens = createStackNavigator(
     ChatScreen: { screen: ChatScreen }
   },
   {
-    initialRouteName: "Rooms"
+    initialRouteName: "Rooms",
+    headerMode: "float",
+    defaultNavigationOptions: {
+      headerTitleStyle: {
+        height: 40,
+        marginTop: 5
+      },
+      headerStyle: {
+        height: 50,
+        backgroundColor: "#227",
+        marginTop: -25
+      },
+      headerTintColor: "#fff"
+    }
   }
 );
 const login = createBottomTabNavigator(
@@ -29,8 +42,16 @@ const login = createBottomTabNavigator(
   },
   {
     initialRouteName: "SignUpScreen",
-    lazy: true,
-    activeTintColor: "#237"
+    tabBarOptions: {
+      lazy: true,
+      activeTintColor: "#237",
+      labelStyle: {
+        fontSize: 15,
+        fontWeight: "bold"
+      },
+      activeBackgroundColor: "#ccf",
+      inactiveTintColor: "#ccc"
+    }
   }
 );
 export default class App extends React.Component {

@@ -27,7 +27,7 @@ class Rooms extends React.Component {
   };
   getRoomsLocal = async () => {
     let rooms = await AsyncStorage.getItem("joinableRooms-" + this.state.id);
-    if (rooms) this.setState({ rooms: JSON.parse(rooms) });
+    if (rooms && this.mounted) this.setState({ rooms: JSON.parse(rooms) });
   };
   getRooms = async () => {
     const url = credentials.SERVER_URL + "/getUserJoinableRooms";
@@ -38,7 +38,8 @@ class Rooms extends React.Component {
     };
     const response = await requestApi(url, data);
     const result = await response.json();
-    if (response.ok) this.setState({ rooms: result, loading: false });
+    if (response.ok && this.mounted)
+      this.setState({ rooms: result, loading: false });
     else alert(result);
   };
   joinRoom = async (roomId, name) => {
@@ -61,6 +62,7 @@ class Rooms extends React.Component {
     }
   };
   componentDidMount = async () => {
+    this.mounted = true;
     await this.getRoomsLocal();
     const chatManager = new ChatManager({
       instanceLocator: credentials.INSTANCE_LOCATOR,
@@ -70,12 +72,15 @@ class Rooms extends React.Component {
       })
     });
     const currentUser = await chatManager.connect();
-    await this.setState({ currentUser });
-    await this.getRooms();
+    if (this.mounted) await this.setState({ currentUser });
+    if (this.mounted) await this.getRooms();
     await AsyncStorage.setItem(
       "joinableRooms-" + this.state.id,
       JSON.stringify(this.state.rooms)
     );
+  };
+  componentWillUnmount = () => {
+    this.mounted = false;
   };
   render() {
     return (
@@ -108,18 +113,16 @@ const styles = StyleSheet.create({
   },
   roomContainer: {
     flex: 0,
-    padding: 20,
-    backgroundColor: "#ddf",
+    padding: 18,
+    backgroundColor: "#eef",
     marginBottom: 1,
     borderBottomWidth: 1,
     borderBottomColor: "grey"
   },
   txt: {
-    fontSize: 20,
-    color: "maroon"
-  },
-  actionButtonIcon: {
-    color: "#fff"
+    fontSize: 18,
+    color: "#235",
+    fontWeight: "bold"
   }
 });
 export default Rooms;

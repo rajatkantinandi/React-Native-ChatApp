@@ -40,6 +40,7 @@ class Chatscreen extends React.Component {
   };
   _keyExtractor = (item, index) => "" + index;
   componentDidMount = async () => {
+    this.mounted = true;
     await this.getAllMessagesLocal();
     const chatManager = new ChatManager({
       instanceLocator: credentials.INSTANCE_LOCATOR,
@@ -49,17 +50,18 @@ class Chatscreen extends React.Component {
       })
     });
     const currentUser = await chatManager.connect();
-    await this.setState({ currentUser });
+    if (this.mounted) await this.setState({ currentUser });
     try {
-      this.state.currentUser.subscribeToRoom({
-        roomId: this.state.roomId,
-        hooks: {
-          onMessage: message => {
-            this.getAllMessages();
-          }
-        },
-        messageLimit: 1
-      });
+      if (this.state.currentUser)
+        this.state.currentUser.subscribeToRoom({
+          roomId: this.state.roomId,
+          hooks: {
+            onMessage: message => {
+              this.getAllMessages();
+            }
+          },
+          messageLimit: 1
+        });
     } catch (err) {
       alert("Error on connection: " + JSON.stringify(err));
     }
@@ -70,10 +72,19 @@ class Chatscreen extends React.Component {
       JSON.stringify(this.state.messages)
     );
   };
+  componentWillUnmount = () => {
+    if (this.state.currentUser)
+      this.state.currentUser.roomSubscriptions[this.state.roomId].cancel();
+    this.mounted = false;
+  };
   sendMessage = async text => {
-    this.setState({
-      messages: [...this.state.messages, { user_id: this.state.id, text: text }]
-    });
+    if (this.mounted)
+      this.setState({
+        messages: [
+          ...this.state.messages,
+          { user_id: this.state.id, text: text }
+        ]
+      });
     const url = credentials.SERVER_URL + "/sendMessage";
     const data = {
       instanceLocator: credentials.INSTANCE_LOCATOR,
@@ -94,30 +105,34 @@ class Chatscreen extends React.Component {
     let messages = await AsyncStorage.getItem("room:" + this.state.roomId);
     if (messages) {
       messages = JSON.parse(messages);
-      this.setState({ messages });
+      if (this.mounted) this.setState({ messages });
     }
   };
   getAllMessages = async () => {
-    const url = credentials.SERVER_URL + "/getRoomMessages";
-    const sentMessages = this.state.messages.filter(message =>
-      message.hasOwnProperty("id")
-    );
-    const initialId =
-      sentMessages.length > 0 ? sentMessages[sentMessages.length - 1].id : null;
-    const data = {
-      instanceLocator: credentials.INSTANCE_LOCATOR,
-      key: credentials.SECRET_KEY,
-      roomId: this.state.roomId,
-      initialId: initialId
-    };
-    this.setState({ loading: true });
-    const response = await requestApi(url, data);
-    const result = await response.json();
-    if (response.ok) {
-      const messages = [...sentMessages, ...result];
-      this.setState({ messages });
-    } else alert(response.statusTxt);
-    this.setState({ loading: false });
+    if (this.mounted) {
+      const url = credentials.SERVER_URL + "/getRoomMessages";
+      const sentMessages = this.state.messages.filter(message =>
+        message.hasOwnProperty("id")
+      );
+      const initialId =
+        sentMessages.length > 0
+          ? sentMessages[sentMessages.length - 1].id
+          : null;
+      const data = {
+        instanceLocator: credentials.INSTANCE_LOCATOR,
+        key: credentials.SECRET_KEY,
+        roomId: this.state.roomId,
+        initialId: initialId
+      };
+      if (this.mounted) this.setState({ loading: true });
+      const response = await requestApi(url, data);
+      const result = await response.json();
+      if (response.ok) {
+        const messages = [...sentMessages, ...result];
+        if (this.mounted) this.setState({ messages });
+      } else alert(response.statusTxt);
+      if (this.mounted) this.setState({ loading: false });
+    }
   };
   leaveRoom = () => {
     Alert.alert(
@@ -130,10 +145,11 @@ class Chatscreen extends React.Component {
           text: "Yes",
           onPress: () => {
             if (this.state.currentUser) {
-              this.setState({
-                activity: true,
-                activityText: "Leaving room, Please wait..."
-              });
+              if (this.mounted)
+                this.setState({
+                  activity: true,
+                  activityText: "Leaving room, Please wait..."
+                });
               this.state.currentUser
                 .leaveRoom({ roomId: this.state.roomId })
                 .then(room => {
@@ -156,14 +172,16 @@ class Chatscreen extends React.Component {
   };
   addUser = userId => {
     if (this.state.currentUser) {
-      this.setState({
-        activity: true,
-        activityText: "Adding New user: " + userId + ", Please wait..."
-      });
+      if (this.mounted)
+        this.setState({
+          activity: true,
+          activityText: "Adding New user: " + userId + ", Please wait..."
+        });
       this.state.currentUser
         .addUserToRoom({ userId: userId, roomId: this.state.roomId })
         .then(() => {
-          this.setState({ promptAddUserVisible: false, activity: false });
+          if (this.mounted)
+            this.setState({ promptAddUserVisible: false, activity: false });
           alert("Added " + userId + " to room: " + this.state.roomName);
         })
         .catch(err => {
@@ -173,21 +191,23 @@ class Chatscreen extends React.Component {
   };
   renameRoom = newName => {
     if (this.state.currentUser) {
-      this.setState({
-        activity: true,
-        activityText: "Renaming the room, Please wait..."
-      });
+      if (this.mounted)
+        this.setState({
+          activity: true,
+          activityText: "Renaming the room, Please wait..."
+        });
       this.state.currentUser
         .updateRoom({
           roomId: this.state.roomId,
           name: newName
         })
         .then(() => {
-          this.setState({
-            roomName: newName,
-            promptRenameVisible: false,
-            activity: false
-          });
+          if (this.mounted)
+            this.setState({
+              roomName: newName,
+              promptRenameVisible: false,
+              activity: false
+            });
           this.props.navigation.setParams({ roomName: newName });
         })
         .catch(err => {
@@ -196,20 +216,17 @@ class Chatscreen extends React.Component {
     }
   };
   parseDate = d => {
-    const toDigits = (val, digits) => {
-      let str = val / Math.pow(10, digits) + "";
-      return str.substring(2);
-    };
+    const twoDigits = val => ((val + "").length === 1 ? "0" + val : val);
     if (d) {
       const date = new Date(d);
       return (
-        toDigits(date.getDate(), 2) +
+        twoDigits(date.getDate()) +
         "/" +
-        toDigits(date.getMonth() + 1, 2) +
+        twoDigits(date.getMonth() + 1) +
         " @" +
-        toDigits(date.getHours(), 2) +
+        twoDigits(date.getHours()) +
         ":" +
-        toDigits(date.getMinutes(), 2)
+        twoDigits(date.getMinutes())
       );
     } else return null;
   };
@@ -269,7 +286,7 @@ const styles = StyleSheet.create({
   page: {
     flex: 1,
     padding: 10,
-    backgroundColor: "#fee",
+    backgroundColor: "#eef",
     zIndex: 1
   }
 });

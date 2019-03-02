@@ -289,8 +289,7 @@ class Rooms extends React.Component {
                   id: this.state.id,
                   name: this.state.name,
                   access_token: this.state.access_token
-                })
-              }
+                })}
             >
               <Text style={styles.txt}>#{item.name}</Text>
             </TouchableOpacity>
@@ -385,15 +384,16 @@ const styles = StyleSheet.create({
   },
   roomContainer: {
     flex: 0,
-    padding: 20,
-    backgroundColor: "#ddf",
+    padding: 18,
+    backgroundColor: "#eef",
     marginBottom: 1,
     borderBottomWidth: 1,
     borderBottomColor: "grey"
   },
   txt: {
-    fontSize: 20,
-    color: "maroon"
+    fontSize: 18,
+    color: "#235",
+    fontWeight: "bold"
   },
   actionButtonIcon: {
     color: "#fff"

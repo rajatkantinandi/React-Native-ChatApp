@@ -7,8 +7,14 @@ import StyledInput from "../Components/StyledInput";
 import credentials from "../credentials";
 import requestApi from "../requestApi";
 export default class SignInScreen extends React.Component {
-  static navigationOptions = {
-    header: "Sign In"
+  static navigationOptions = ({ navigation }) => {
+    return {
+      tabBarLabel: "Sign In",
+      tabBarIcon: ({ tintColor }) => (
+        <Icon.FontAwesome name="sign-in" size={25} color={tintColor} />
+      ),
+      tabBarColor: "green"
+    };
   };
   state = {
     username: "",

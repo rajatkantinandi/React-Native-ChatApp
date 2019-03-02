@@ -13,8 +13,13 @@ import credentials from "../credentials";
 import requestApi from "../requestApi";
 
 export default class SignUpScreen extends React.Component {
-  static navigationOptions = {
-    header: "Sign Up"
+  static navigationOptions = ({ navigation }) => {
+    return {
+      tabBarLabel: "Sign Up",
+      tabBarIcon: ({ tintColor }) => (
+        <Icon.FontAwesome name="user-plus" size={25} color={tintColor} />
+      )
+    };
   };
   state = {
     name: "",

@@ -40,10 +40,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 0,
     padding: 8,
-    backgroundColor: "#22AA00",
+    backgroundColor: "#dfd",
     borderRadius: 10,
     borderBottomLeftRadius: 0,
-    width: "93%"
+    width: "93%",
+    borderWidth: 1,
+    borderColor: "#2a2"
   },
   heading: {
     flex: 0,
@@ -51,12 +53,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between"
   },
   from: {
-    color: "#ff9",
+    color: "#191",
     fontWeight: "bold",
     fontSize: 20
   },
   text: {
-    color: "#fff",
+    color: "#111",
     fontSize: 15
   }
 });
@@ -73,10 +75,12 @@ const styles2 = StyleSheet.create({
   container: {
     flex: 0,
     padding: 8,
-    backgroundColor: "#AA2200",
+    backgroundColor: "#529",
     borderRadius: 10,
     borderBottomRightRadius: 0,
-    width: "93%"
+    width: "93%",
+    borderWidth: 1,
+    borderColor: "#fcf"
   },
   from: {
     color: "#9ff",
