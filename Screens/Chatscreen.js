@@ -1,10 +1,19 @@
 import React from "react";
-import { View, FlatList, StyleSheet, AsyncStorage, Alert } from "react-native";
+import {
+  View,
+  FlatList,
+  StyleSheet,
+  AsyncStorage,
+  Alert,
+  ProgressBarAndroid
+} from "react-native";
 import Message from "../Components/Message";
 import InputArea from "../Components/InputArea";
 import credentials from "../credentials";
 import Prompt from "rn-prompt";
 import requestApi from "../requestApi";
+import ProgressDialog from "../Components/ProgressDialog";
+
 import {
   ChatManager,
   TokenProvider
@@ -24,7 +33,10 @@ class Chatscreen extends React.Component {
     activity: true,
     currentUser: null,
     promptAddUserVisible: false,
-    promptRenameVisible: false
+    promptRenameVisible: false,
+    loading: true,
+    activity: false,
+    activityText: "Please wait.."
   };
   _keyExtractor = (item, index) => "" + index;
   componentDidMount = async () => {
@@ -98,14 +110,14 @@ class Chatscreen extends React.Component {
       roomId: this.state.roomId,
       initialId: initialId
     };
+    this.setState({ loading: true });
     const response = await requestApi(url, data);
     const result = await response.json();
     if (response.ok) {
       const messages = [...sentMessages, ...result];
-      console.log(JSON.stringify(result));
       this.setState({ messages });
     } else alert(response.statusTxt);
-    this.setState({ activity: false });
+    this.setState({ loading: false });
   };
   leaveRoom = () => {
     Alert.alert(
@@ -118,6 +130,10 @@ class Chatscreen extends React.Component {
           text: "Yes",
           onPress: () => {
             if (this.state.currentUser) {
+              this.setState({
+                activity: true,
+                activityText: "Leaving room, Please wait..."
+              });
               this.state.currentUser
                 .leaveRoom({ roomId: this.state.roomId })
                 .then(room => {
@@ -140,10 +156,14 @@ class Chatscreen extends React.Component {
   };
   addUser = userId => {
     if (this.state.currentUser) {
+      this.setState({
+        activity: true,
+        activityText: "Adding New user: " + userId + ", Please wait..."
+      });
       this.state.currentUser
         .addUserToRoom({ userId: userId, roomId: this.state.roomId })
         .then(() => {
-          this.setState({ promptAddUserVisible: false });
+          this.setState({ promptAddUserVisible: false, activity: false });
           alert("Added " + userId + " to room: " + this.state.roomName);
         })
         .catch(err => {
@@ -153,13 +173,21 @@ class Chatscreen extends React.Component {
   };
   renameRoom = newName => {
     if (this.state.currentUser) {
+      this.setState({
+        activity: true,
+        activityText: "Renaming the room, Please wait..."
+      });
       this.state.currentUser
         .updateRoom({
           roomId: this.state.roomId,
           name: newName
         })
         .then(() => {
-          this.setState({ roomName: newName, promptRenameVisible: false });
+          this.setState({
+            roomName: newName,
+            promptRenameVisible: false,
+            activity: false
+          });
           this.props.navigation.setParams({ roomName: newName });
         })
         .catch(err => {
@@ -188,6 +216,11 @@ class Chatscreen extends React.Component {
   render() {
     return (
       <View style={styles.container}>
+        <ProgressDialog
+          visible={this.state.activity}
+          text={this.state.activityText}
+        />
+        {this.state.loading && <ProgressBarAndroid styleAttr="Horizontal" />}
         <FlatList
           data={[...this.state.messages].reverse()}
           renderItem={({ item }) => (
