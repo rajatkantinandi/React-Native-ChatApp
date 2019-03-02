@@ -8,3 +8,4 @@ npm-debug.*
 credentials.js,
 package-lock.json
 google-services.json
+.vscode

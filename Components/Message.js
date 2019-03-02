@@ -10,7 +10,12 @@ export default class Message extends React.Component {
     return (
       <View style={finalStyle.outer}>
         <TouchableOpacity style={finalStyle.container}>
-          <Text style={finalStyle.from}>{this.props.from}</Text>
+          <View style={styles.heading}>
+            <Text style={finalStyle.from}>{this.props.from}</Text>
+            <Text style={finalStyle.text}>
+              {this.props.at ? " on " + this.props.at : ""}
+            </Text>
+          </View>
           <Text style={finalStyle.text}>{this.props.text}</Text>
         </TouchableOpacity>
         {this.props.sent &&
@@ -39,6 +44,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderBottomLeftRadius: 0,
     width: "93%"
+  },
+  heading: {
+    flex: 0,
+    flexDirection: "row",
+    justifyContent: "space-between"
   },
   from: {
     color: "#ff9",

@@ -5,10 +5,12 @@ import {
   Text,
   StyleSheet,
   AsyncStorage,
-  FlatList
+  FlatList,
+  ProgressBarAndroid
 } from "react-native";
 import credentials from "../credentials";
 import requestApi from "../requestApi";
+import ProgressDialog from "../Components/ProgressDialog";
 import { ChatManager, TokenProvider } from "@pusher/chatkit-client";
 class Rooms extends React.Component {
   static navigationOptions = {
@@ -19,7 +21,9 @@ class Rooms extends React.Component {
     name: this.props.navigation.getParam("name"),
     rooms: [],
     access_token: this.props.navigation.getParam("access_token"),
-    currentUser: null
+    currentUser: null,
+    activity: false,
+    loading: true
   };
   getRoomsLocal = async () => {
     let rooms = await AsyncStorage.getItem("joinableRooms-" + this.state.id);
@@ -34,15 +38,17 @@ class Rooms extends React.Component {
     };
     const response = await requestApi(url, data);
     const result = await response.json();
-    if (response.ok) this.setState({ rooms: result });
+    if (response.ok) this.setState({ rooms: result, loading: false });
     else alert(result);
   };
   joinRoom = async (roomId, name) => {
     if (this.state.currentUser) {
+      this.setState({ activity: true });
       await this.state.currentUser.joinRoom({ roomId: roomId });
       try {
         await this.setState({
-          rooms: this.state.rooms.filter(room => room.id !== roomId)
+          rooms: this.state.rooms.filter(room => room.id !== roomId),
+          activity: false
         });
         await AsyncStorage.setItem(
           "joinableRooms-" + this.state.id,
@@ -74,6 +80,11 @@ class Rooms extends React.Component {
   render() {
     return (
       <View style={styles.container}>
+        <ProgressDialog
+          visible={this.state.activity}
+          text="Adding you to the room.. Please Wait.."
+        />
+        {this.state.loading && <ProgressBarAndroid styleAttr="Horizontal" />}
         <FlatList
           keyExtractor={(item, index) => "" + index}
           data={this.state.rooms}

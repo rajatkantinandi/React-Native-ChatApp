@@ -32,7 +32,7 @@ export default class StyledBtn extends React.Component {
         onPress={this.props.onPress}
         style={[
           styles.btn,
-          { backgroundColor: this.props.bgcolor, width: this.props.width }
+          { backgroundColor: this.props.bgcolor, minWidth: this.props.width }
         ]}
       >
         {this.props.activity && (

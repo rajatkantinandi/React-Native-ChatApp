@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, ScrollView, KeyboardAvoidingView } from "react-native";
 import { Icon, Permissions, Notifications } from "expo";
 import TitleBar from "../Components/TitleBar";
 import StyledBtn from "../Components/StyledBtn";
@@ -71,31 +71,37 @@ export default class SignInScreen extends React.Component {
       }
     });
     return (
-      <View style={styles.container}>
+      <ScrollView>
         <TitleBar />
-        <StyledInput
-          bgColor="#ffd"
-          placeholder="Enter Username"
-          autoCapitalize="none"
-          onChangeText={username => this.setState({ username })}
-          icon={<Icon.FontAwesome name="user-circle" size={25} />}
-        />
-        <StyledInput
-          bgColor="#ffd"
-          placeholder="Enter Password"
-          onChangeText={password => this.setState({ password })}
-          icon={<Icon.MaterialIcons name="lock" size={25} />}
-          secureTextEntry={true}
-        />
-        <StyledBtn
-          bgcolor="#349"
-          txtColor="#fff"
-          activity={this.state.activity}
-          title={this.state.activity ? "Please wait..." : "Sign In"}
-          onPress={this.signinAction}
-          width={180}
-        />
-      </View>
+        <KeyboardAvoidingView
+          enabled
+          behavior="padding"
+          style={styles.container}
+        >
+          <StyledInput
+            bgColor="#ffd"
+            placeholder="Enter Username"
+            autoCapitalize="none"
+            onChangeText={username => this.setState({ username })}
+            icon={<Icon.FontAwesome name="user-circle" size={25} />}
+          />
+          <StyledInput
+            bgColor="#ffd"
+            placeholder="Enter Password"
+            onChangeText={password => this.setState({ password })}
+            icon={<Icon.MaterialIcons name="lock" size={25} />}
+            secureTextEntry={true}
+          />
+          <StyledBtn
+            bgcolor="#349"
+            txtColor="#fff"
+            activity={this.state.activity}
+            title={this.state.activity ? "Please wait..." : "Sign In"}
+            onPress={this.signinAction}
+            width={180}
+          />
+        </KeyboardAvoidingView>
+      </ScrollView>
     );
   }
 }

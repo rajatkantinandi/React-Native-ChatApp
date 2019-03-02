@@ -28,7 +28,9 @@ const login = createBottomTabNavigator(
     SignInScreen: SignInScreen
   },
   {
-    initialRouteName: "SignInScreen"
+    initialRouteName: "SignUpScreen",
+    lazy: true,
+    activeTintColor: "#237"
   }
 );
 export default class App extends React.Component {

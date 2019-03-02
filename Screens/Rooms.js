@@ -6,13 +6,15 @@ import {
   StyleSheet,
   AsyncStorage,
   FlatList,
-  Alert
+  Alert,
+  ProgressBarAndroid
 } from "react-native";
 import { Icon } from "expo";
 import credentials from "../credentials";
 import requestApi from "../requestApi";
 import Prompt from "rn-prompt";
 import ActionButton from "react-native-action-button";
+import ProgressDialog from "../Components/ProgressDialog";
 import {
   ChatManager,
   TokenProvider
@@ -35,55 +37,82 @@ class Rooms extends React.Component {
       onCancel: () => this.setState({ promptVisible: false })
     },
     promptVisible: false,
-    token: this.props.navigation.getParam("token")
+    token: this.props.navigation.getParam("token"),
+    activity: false,
+    activityText: "Please wait..",
+    loading: true
   };
+
   showPrompt = title => {
     if (title === "New Room") {
-      const prompt = {
-        title: title,
-        placeholder: "Enter A New Room Name",
-        onSubmit: async value => {
-          const url = credentials.CHATKIT_API + "/rooms";
-          const response = await fetch(url, {
-            method: "POST",
-            mode: "cors",
-            headers: {
-              Authorization: "Bearer " + this.state.access_token,
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              name: value,
-              user_ids: [this.state.id],
-              private: false
-            })
-          });
-          if (response.ok) {
-            const newRoom = await response.json();
+      const getPrompt = isPrivate => {
+        return {
+          title: title,
+          placeholder: "Enter A New Room Name",
+          onSubmit: async value => {
+            const url = credentials.CHATKIT_API + "/rooms";
             this.setState({
-              rooms: [...this.state.rooms, newRoom],
-              promptVisible: false
+              activity: true,
+              activityText: "Creating new Room\nPlease wait..."
             });
-            this.props.navigation.navigate("ChatScreen", {
-              roomName: newRoom.name,
-              roomId: newRoom.id,
-              id: this.state.id,
-              name: this.state.name,
-              access_token: this.state.access_token
+            const response = await fetch(url, {
+              method: "POST",
+              mode: "cors",
+              headers: {
+                Authorization: "Bearer " + this.state.access_token,
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                name: value,
+                user_ids: [this.state.id],
+                private: isPrivate
+              })
             });
-          } else {
-            alert("error: " + response.status);
-            this.setState({ promptVisible: false });
-          }
-        },
-        onCancel: () => this.setState({ promptVisible: false })
+            if (response.ok) {
+              const newRoom = await response.json();
+              this.setState({
+                promptVisible: false,
+                activity: false
+              });
+            } else {
+              alert("error: " + response.status);
+              this.setState({ promptVisible: false });
+            }
+          },
+          onCancel: () => this.setState({ promptVisible: false })
+        };
       };
-      this.setState({ prompt: prompt, promptVisible: true });
+      Alert.alert(
+        "Choose Kind of Room",
+        "Want to create a private room or public room?",
+        [
+          {
+            text: "Private",
+            onPress: () => {
+              const prompt = getPrompt(true);
+              this.setState({ prompt: prompt, promptVisible: true });
+            }
+          },
+          {
+            text: "Public",
+            onPress: () => {
+              const prompt = getPrompt(false);
+              this.setState({ prompt: prompt, promptVisible: true });
+            }
+          }
+        ],
+        { cancelable: false }
+      );
     } else if (title === "Private Chat with a new User") {
       const prompt = {
         title: title,
         placeholder: "Enter the username to chat with",
         onSubmit: async value => {
           const url = credentials.CHATKIT_API + "/rooms";
+          this.setState({
+            activity: true,
+            activityText: "Creating new Room\nPlease wait..."
+          });
           const response = await fetch(url, {
             method: "POST",
             mode: "cors",
@@ -100,15 +129,8 @@ class Rooms extends React.Component {
           if (response.ok) {
             const newRoom = await response.json();
             this.setState({
-              rooms: [...this.state.rooms, newRoom],
-              promptVisible: false
-            });
-            this.props.navigation.navigate("ChatScreen", {
-              roomName: newRoom.name,
-              roomId: newRoom.id,
-              id: this.state.id,
-              name: this.state.name,
-              access_token: this.state.access_token
+              promptVisible: false,
+              activity: false
             });
           } else {
             alert("error: Invalid Username >> " + response.status);
@@ -131,9 +153,10 @@ class Rooms extends React.Component {
       key: credentials.SECRET_KEY,
       id: this.state.id
     };
+    this.setState({ loading: true });
     const response = await requestApi(url, data);
     const result = await response.json();
-    if (response.ok) this.setState({ rooms: result });
+    if (response.ok) this.setState({ rooms: result, loading: false });
     else alert(result);
   };
   getAuth = async () => {
@@ -156,6 +179,10 @@ class Rooms extends React.Component {
       instanceLocator: credentials.INSTANCE_LOCATOR,
       key: credentials.SECRET_KEY
     };
+    this.setState({
+      activity: true,
+      activityText: "Signing out... \nPlease Wait.."
+    });
     const response = await requestApi(url, data);
     if (response.ok) {
       await AsyncStorage.removeItem("user-auth");
@@ -234,7 +261,6 @@ class Rooms extends React.Component {
         });
       }
     });
-    alert("connected");
     await this.getRooms();
     await AsyncStorage.setItem(
       "rooms-" + this.state.id,
@@ -244,6 +270,11 @@ class Rooms extends React.Component {
   render() {
     return (
       <View style={styles.container}>
+        <ProgressDialog
+          visible={this.state.activity}
+          text={this.state.activityText}
+        />
+        {this.state.loading && <ProgressBarAndroid styleAttr="Horizontal" />}
         <FlatList
           keyExtractor={(item, index) => "" + index}
           data={this.state.rooms}
@@ -258,7 +289,8 @@ class Rooms extends React.Component {
                   id: this.state.id,
                   name: this.state.name,
                   access_token: this.state.access_token
-                })}
+                })
+              }
             >
               <Text style={styles.txt}>#{item.name}</Text>
             </TouchableOpacity>
@@ -316,6 +348,17 @@ class Rooms extends React.Component {
           >
             <Icon.Ionicons
               name="md-person-add"
+              size={30}
+              style={styles.actionButtonIcon}
+            />
+          </ActionButton.Item>
+          <ActionButton.Item
+            buttonColor="#2020a0"
+            title="Refresh"
+            onPress={() => this.getRooms()}
+          >
+            <Icon.Ionicons
+              name="md-refresh-circle"
               size={30}
               style={styles.actionButtonIcon}
             />

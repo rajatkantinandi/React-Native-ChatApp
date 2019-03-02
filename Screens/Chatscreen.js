@@ -167,6 +167,24 @@ class Chatscreen extends React.Component {
         });
     }
   };
+  parseDate = d => {
+    const toDigits = (val, digits) => {
+      let str = val / Math.pow(10, digits) + "";
+      return str.substring(2);
+    };
+    if (d) {
+      const date = new Date(d);
+      return (
+        toDigits(date.getDate(), 2) +
+        "/" +
+        toDigits(date.getMonth() + 1, 2) +
+        " @" +
+        toDigits(date.getHours(), 2) +
+        ":" +
+        toDigits(date.getMinutes(), 2)
+      );
+    } else return null;
+  };
   render() {
     return (
       <View style={styles.container}>
@@ -178,6 +196,7 @@ class Chatscreen extends React.Component {
               text={item.text}
               sent={item.user_id === this.state.id}
               posted={item.hasOwnProperty("id")}
+              at={this.parseDate(item.created_at)}
             />
           )}
           keyExtractor={this._keyExtractor}
