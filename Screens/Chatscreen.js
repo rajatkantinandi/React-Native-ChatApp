@@ -39,9 +39,24 @@ class Chatscreen extends React.Component {
     activityText: "Please wait.."
   };
   _keyExtractor = (item, index) => "" + index;
-  componentDidMount = async () => {
-    this.mounted = true;
-    await this.getAllMessagesLocal();
+  componentWillReceiveProps = async nextProps => {
+    if (this.mounted)
+      await this.setState({
+        name: nextProps.navigation.getParam("name"),
+        id: nextProps.navigation.getParam("id"),
+        roomId: nextProps.navigation.getParam("roomId"),
+        roomName: nextProps.navigation.getParam("roomName"),
+        messages: [],
+        loading: true
+      });
+    await AsyncStorage.setItem(
+      "room:" + nextProps.navigation.getParam("roomId"),
+      JSON.stringify([])
+    );
+    await this.connectToChat();
+    await this.getAllMessages();
+  };
+  connectToChat = async () => {
     const chatManager = new ChatManager({
       instanceLocator: credentials.INSTANCE_LOCATOR,
       userId: this.state.id,
@@ -65,6 +80,11 @@ class Chatscreen extends React.Component {
     } catch (err) {
       alert("Error on connection: " + JSON.stringify(err));
     }
+  };
+  componentDidMount = async () => {
+    this.mounted = true;
+    await this.getAllMessagesLocal();
+    await this.connectToChat();
   };
   componentDidUpdate = async () => {
     await AsyncStorage.setItem(
