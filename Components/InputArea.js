@@ -18,6 +18,16 @@ export default class InputArea extends React.Component {
     }
   };
   render() {
+    let options = ["Add User to Room", "Rename this Room", "leave Room"];
+    let actions = [
+      this.props.addUser,
+      this.props.renameRoom,
+      this.props.leaveRoom
+    ];
+    if (this.props.isCreator) {
+      options.push("Delete Room");
+      actions.push(this.props.deleteRoom);
+    }
     return (
       <View style={styles.container}>
         <OptionsMenu
@@ -29,12 +39,8 @@ export default class InputArea extends React.Component {
             backgroundColor: "#fff"
           }}
           destructiveIndex={1}
-          options={["Add User to Room", "Rename this Room", "leave Room"]}
-          actions={[
-            this.props.addUser,
-            this.props.renameRoom,
-            this.props.leaveRoom
-          ]}
+          options={options}
+          actions={actions}
         />
         <TextInput
           placeholder="Type something..."

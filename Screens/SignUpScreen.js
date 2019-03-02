@@ -137,7 +137,7 @@ export default class SignUpScreen extends React.Component {
           <StyledInput
             bgColor="#ffd"
             placeholder="Enter Your Name"
-            autoCapitalize="none"
+            autoCapitalize="words"
             onChangeText={name => this.setState({ name })}
             icon={<Icon.FontAwesome name="user-circle" size={25} />}
           />
@@ -172,6 +172,7 @@ export default class SignUpScreen extends React.Component {
             onChangeText={password => this.setState({ password })}
             icon={<Icon.MaterialIcons name="lock" size={25} />}
             secureTextEntry={true}
+            autoCapitalize="none"
           />
           <Text style={styles.hint}>
             ** Password must be atleast 8 chars long & have only letters &
@@ -183,16 +184,17 @@ export default class SignUpScreen extends React.Component {
             onChangeText={repeatPassword => this.setState({ repeatPassword })}
             icon={<Icon.MaterialIcons name="lock" size={25} />}
             secureTextEntry={true}
+            autoCapitalize="none"
+          />
+          <StyledBtn
+            bgcolor="#394"
+            txtColor="#fff"
+            activity={this.state.activity}
+            title={this.state.activity ? "Please wait..." : "Sign Up"}
+            onPress={this.signupAction}
+            width={180}
           />
         </KeyboardAvoidingView>
-        <StyledBtn
-          bgcolor="#394"
-          txtColor="#fff"
-          activity={this.state.activity}
-          title={this.state.activity ? "Please wait..." : "Sign Up"}
-          onPress={this.signupAction}
-          width={180}
-        />
       </ScrollView>
     );
   }

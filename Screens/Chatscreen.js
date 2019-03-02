@@ -30,6 +30,7 @@ class Chatscreen extends React.Component {
     messages: [],
     roomName: this.props.navigation.getParam("roomName"),
     roomId: this.props.navigation.getParam("roomId"),
+    creator: this.props.navigation.getParam("creator"),
     activity: true,
     currentUser: null,
     promptAddUserVisible: false,
@@ -46,6 +47,7 @@ class Chatscreen extends React.Component {
         id: nextProps.navigation.getParam("id"),
         roomId: nextProps.navigation.getParam("roomId"),
         roomName: nextProps.navigation.getParam("roomName"),
+        creator: nextProps.navigation.getParam("creator"),
         messages: [],
         loading: true
       });
@@ -118,7 +120,9 @@ class Chatscreen extends React.Component {
       const message = await response.json();
       console.log(`Added message: ` + message.messageId);
     } else {
-      console.log(`Error adding message : ${response.statusText}`);
+      console.log(
+        `Error adding message or only one user : ${response.statusText}`
+      );
     }
   };
   getAllMessagesLocal = async () => {
@@ -176,7 +180,10 @@ class Chatscreen extends React.Component {
                   this.props.navigation.goBack();
                 })
                 .catch(err => {
-                  console.log(`Error leaving room ${someRoomID}: ${err}`);
+                  this.setState({ activity: false });
+                  console.log(
+                    `Error leaving room ${this.state.roomName}: ${err}`
+                  );
                 });
             }
           }
@@ -190,23 +197,82 @@ class Chatscreen extends React.Component {
       { cancelable: false }
     );
   };
-  addUser = userId => {
-    if (this.state.currentUser) {
-      if (this.mounted)
-        this.setState({
-          activity: true,
-          activityText: "Adding New user: " + userId + ", Please wait..."
-        });
-      this.state.currentUser
-        .addUserToRoom({ userId: userId, roomId: this.state.roomId })
-        .then(() => {
-          if (this.mounted)
-            this.setState({ promptAddUserVisible: false, activity: false });
-          alert("Added " + userId + " to room: " + this.state.roomName);
-        })
-        .catch(err => {
+
+  deleteRoom = () => {
+    if (this.state.creator === this.state.id) {
+      Alert.alert(
+        "Delete Room ?",
+        'Are you sure to delete "' +
+          this.state.roomName +
+          "\" room?\nThis action can't be undone",
+        [
+          {
+            text: "Yes",
+            onPress: () => {
+              if (this.state.currentUser) {
+                if (this.mounted)
+                  this.setState({
+                    activity: true,
+                    activityText: "Deleting room, Please wait..."
+                  });
+                this.state.currentUser
+                  .deleteRoom({ roomId: this.state.roomId })
+                  .then(() => {
+                    this.props.navigation.goBack();
+                  })
+                  .catch(err => {
+                    this.setState({ activity: false });
+                    console.log(
+                      `Error Deleting room ${this.state.roomName}: ${err}`
+                    );
+                  });
+              }
+            }
+          },
+          {
+            text: "No",
+            onPress: () => console.log("Cancel Pressed"),
+            style: "cancel"
+          }
+        ],
+        { cancelable: false }
+      );
+    }
+  };
+  addUser = async userId => {
+    if (userId != "") {
+      if (this.state.currentUser) {
+        if (this.mounted)
+          this.setState({
+            activity: true,
+            activityText: "Adding New user: " + userId + ", Please wait..."
+          });
+        const url = credentials.SERVER_URL + "/userAvailability";
+        const data = {
+          id: userId,
+          instanceLocator: credentials.INSTANCE_LOCATOR,
+          key: credentials.SECRET_KEY
+        };
+        const response = await requestApi(url, data);
+        if (response.ok) {
+          this.setState({ activity: false });
           alert(`Error : UserID does not exist`);
-        });
+        } else {
+          this.state.currentUser
+            .addUserToRoom({ userId: userId, roomId: this.state.roomId })
+            .then(() => {
+              if (this.mounted)
+                this.setState({ promptAddUserVisible: false, activity: false });
+              alert("Added " + userId + " to room: " + this.state.roomName);
+            })
+            .catch(err => {
+              this.setState({ activity: false });
+              alert(`Error : ${err.status}`);
+            });
+        }
+      }
+    } else {
+      alert("userId must not be empty");
     }
   };
   renameRoom = newName => {
@@ -231,6 +297,7 @@ class Chatscreen extends React.Component {
           this.props.navigation.setParams({ roomName: newName });
         })
         .catch(err => {
+          this.setState({ activity: false });
           console.log(`Error updated room ${someRoomID}: ${err}`);
         });
     }
@@ -286,12 +353,17 @@ class Chatscreen extends React.Component {
           visible={this.state.promptAddUserVisible}
           onSubmit={value => this.addUser(value)}
           onCancel={() => this.setState({ promptAddUserVisible: false })}
+          textInputProps={{
+            autoCapitalize: "none"
+          }}
         />
         <InputArea
           onSend={text => this.sendMessage(text)}
-          leaveRoom={this.leaveRoom}
+          leaveRoom={() => this.leaveRoom()}
           renameRoom={() => this.setState({ promptRenameVisible: true })}
           addUser={() => this.setState({ promptAddUserVisible: true })}
+          isCreator={this.state.creator === this.state.id}
+          deleteRoom={() => this.deleteRoom()}
         />
       </View>
     );

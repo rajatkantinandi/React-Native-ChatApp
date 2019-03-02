@@ -1,8 +1,6 @@
 import React from "react";
 import {
-  TouchableOpacity,
   View,
-  Text,
   StyleSheet,
   AsyncStorage,
   FlatList,
@@ -19,6 +17,7 @@ import {
   ChatManager,
   TokenProvider
 } from "@pusher/chatkit-client/react-native";
+import Room from "../Components/Room";
 class Rooms extends React.Component {
   static navigationOptions = ({ navigation }) => {
     return {
@@ -76,7 +75,7 @@ class Rooms extends React.Component {
               });
             } else {
               alert("error: " + response.status);
-              this.setState({ promptVisible: false });
+              this.setState({ promptVisible: false, activity: false });
             }
           },
           onCancel: () => this.setState({ promptVisible: false })
@@ -134,7 +133,7 @@ class Rooms extends React.Component {
             });
           } else {
             alert("error: Invalid Username >> " + response.status);
-            this.setState({ promptVisible: false });
+            this.setState({ promptVisible: false, activity: false });
           }
         },
         onCancel: () => this.setState({ promptVisible: false })
@@ -187,7 +186,10 @@ class Rooms extends React.Component {
     if (response.ok) {
       await AsyncStorage.removeItem("user-auth");
       this.props.navigation.navigate("login");
-    } else alert("Unable to log out");
+    } else {
+      this.setState({ activity: false });
+      alert("Unable to log out");
+    }
   };
   componentDidMount = async () => {
     let authUser = await AsyncStorage.getItem("user-auth");
@@ -233,7 +235,7 @@ class Rooms extends React.Component {
                   roomId: room.id,
                   id: this.state.id,
                   name: this.state.name,
-                  access_token: this.state.access_token
+                  creator: room.created_by_id
                 })
             },
             {
@@ -250,6 +252,12 @@ class Rooms extends React.Component {
           rooms: this.state.rooms.filter(room => room.id !== removedRoom.id)
         });
         alert("You are removed from room: " + removedRoom.name);
+      },
+      onRoomDeleted: deletedRoom => {
+        this.setState({
+          rooms: this.state.rooms.filter(room => room.id !== deletedRoom.id)
+        });
+        alert("Deleted room: " + deletedRoom.name);
       },
       onRoomUpdated: updatedRoom => {
         this.setState({
@@ -279,20 +287,12 @@ class Rooms extends React.Component {
           keyExtractor={(item, index) => "" + index}
           data={this.state.rooms}
           renderItem={({ item }) => (
-            <TouchableOpacity
-              key={item.id}
-              style={styles.roomContainer}
-              onPress={() =>
-                this.props.navigation.navigate("ChatScreen", {
-                  roomName: item.name,
-                  roomId: item.id,
-                  id: this.state.id,
-                  name: this.state.name,
-                  access_token: this.state.access_token
-                })}
-            >
-              <Text style={styles.txt}>#{item.name}</Text>
-            </TouchableOpacity>
+            <Room
+              item={item}
+              userId={this.state.id}
+              name={this.state.name}
+              navigation={this.props.navigation}
+            />
           )}
         />
         <Prompt
@@ -301,6 +301,9 @@ class Rooms extends React.Component {
           visible={this.state.promptVisible}
           onSubmit={value => this.state.prompt.onSubmit(value)}
           onCancel={this.state.prompt.onCancel}
+          textInputProps={{
+            autoCapitalize: "none"
+          }}
         />
         <ActionButton
           buttonColor="rgba(120,120,120,0.8)"
