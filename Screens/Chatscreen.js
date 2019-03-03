@@ -51,13 +51,8 @@ class Chatscreen extends React.Component {
         messages: [],
         loading: true
       });
-    if (nextProps.navigation.getParam("creator") !== "*&push")
-      await AsyncStorage.setItem(
-        "room:" + nextProps.navigation.getParam("roomId"),
-        JSON.stringify([])
-      );
+    await this.getAllMessagesLocal();
     await this.connectToChat();
-    await this.getAllMessages();
   };
   connectToChat = async () => {
     const chatManager = new ChatManager({
@@ -130,7 +125,7 @@ class Chatscreen extends React.Component {
     let messages = await AsyncStorage.getItem("room:" + this.state.roomId);
     if (messages) {
       messages = JSON.parse(messages);
-      if (this.mounted) this.setState({ messages });
+      if (this.mounted) await this.setState({ messages });
     }
   };
   getAllMessages = async () => {

@@ -200,8 +200,7 @@ class Rooms extends React.Component {
           roomName: notification.data.roomName,
           roomId: notification.data.roomId,
           id: this.state.id,
-          name: this.state.name,
-          creator: "*&push"
+          name: this.state.name
         });
     });
     await this.getRoomsLocal();
