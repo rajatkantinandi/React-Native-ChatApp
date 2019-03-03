@@ -11,6 +11,7 @@ import {
 import credentials from "../credentials";
 import requestApi from "../requestApi";
 import ProgressDialog from "../Components/ProgressDialog";
+import SearchBar from "../Components/SearchBar";
 import { ChatManager, TokenProvider } from "@pusher/chatkit-client";
 class Rooms extends React.Component {
   static navigationOptions = {
@@ -20,6 +21,8 @@ class Rooms extends React.Component {
     id: this.props.navigation.getParam("id"),
     name: this.props.navigation.getParam("name"),
     rooms: [],
+    filteredRooms: [],
+    filterText: "",
     access_token: this.props.navigation.getParam("access_token"),
     currentUser: null,
     activity: false,
@@ -27,7 +30,11 @@ class Rooms extends React.Component {
   };
   getRoomsLocal = async () => {
     let rooms = await AsyncStorage.getItem("joinableRooms-" + this.state.id);
-    if (rooms && this.mounted) this.setState({ rooms: JSON.parse(rooms) });
+    if (rooms && this.mounted)
+      this.setState({
+        rooms: JSON.parse(rooms),
+        filteredRooms: this.filter(JSON.parse(rooms))
+      });
   };
   getRooms = async () => {
     const url = credentials.SERVER_URL + "/getUserJoinableRooms";
@@ -39,7 +46,11 @@ class Rooms extends React.Component {
     const response = await requestApi(url, data);
     const result = await response.json();
     if (response.ok && this.mounted)
-      this.setState({ rooms: result, loading: false });
+      this.setState({
+        rooms: result,
+        loading: false,
+        filteredRooms: this.filter(result)
+      });
     else alert(result);
   };
   joinRoom = async (roomId, name) => {
@@ -49,7 +60,10 @@ class Rooms extends React.Component {
       try {
         await this.setState({
           rooms: this.state.rooms.filter(room => room.id !== roomId),
-          activity: false
+          activity: false,
+          filteredRooms: this.state.filteredRooms.filter(
+            room => room.id !== roomId
+          )
         });
         await AsyncStorage.setItem(
           "joinableRooms-" + this.state.id,
@@ -60,6 +74,12 @@ class Rooms extends React.Component {
         console.log(`Error joining room ${name}: ${err}`);
       }
     }
+  };
+  filter = rooms => {
+    if (this.state.filterText !== "") {
+      const regex = new RegExp(this.state.filterText, "gi");
+      return rooms.filter(room => regex.test(room.name));
+    } else return rooms;
   };
   componentDidMount = async () => {
     this.mounted = true;
@@ -91,8 +111,9 @@ class Rooms extends React.Component {
         />
         {this.state.loading && <ProgressBarAndroid styleAttr="Horizontal" />}
         <FlatList
+          style={styles.list}
           keyExtractor={(item, index) => "" + index}
-          data={this.state.rooms}
+          data={this.state.filteredRooms}
           renderItem={({ item }) => (
             <TouchableOpacity
               key={item.id}
@@ -102,6 +123,12 @@ class Rooms extends React.Component {
               <Text style={styles.txt}>#{item.name}</Text>
             </TouchableOpacity>
           )}
+        />
+        <SearchBar
+          filter={async text => {
+            await this.setState({ filterText: text });
+            this.setState({ filteredRooms: this.filter(this.state.rooms) });
+          }}
         />
       </View>
     );
@@ -123,6 +150,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#235",
     fontWeight: "bold"
+  },
+  list: {
+    flex: 1
   }
 });
 export default Rooms;

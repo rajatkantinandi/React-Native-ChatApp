@@ -1,5 +1,12 @@
 import React from "react";
-import { TouchableOpacity, Text, StyleSheet, View } from "react-native";
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  View,
+  Clipboard,
+  ToastAndroid
+} from "react-native";
 import { Icon } from "expo";
 export default class Message extends React.Component {
   constructor(props) {
@@ -9,7 +16,17 @@ export default class Message extends React.Component {
     const finalStyle = this.props.sent ? styles2 : styles;
     return (
       <View style={finalStyle.outer}>
-        <TouchableOpacity style={finalStyle.container}>
+        <TouchableOpacity
+          style={finalStyle.container}
+          onLongPress={() => {
+            Clipboard.setString(this.props.text);
+            ToastAndroid.show(
+              "Copied to Clipboard",
+              ToastAndroid.LONG,
+              ToastAndroid.CENTER
+            );
+          }}
+        >
           <View style={styles.heading}>
             <Text style={finalStyle.from}>{this.props.from}</Text>
             <Text style={finalStyle.text}>
