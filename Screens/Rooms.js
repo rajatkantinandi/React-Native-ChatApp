@@ -195,13 +195,14 @@ class Rooms extends React.Component {
     }
     Notifications.addListener(notification => {
       console.log("New notification", notification);
-      this.props.navigation.navigate("ChatScreen", {
-        roomName: notification.data.roomName,
-        roomId: notification.data.roomId,
-        id: this.state.id,
-        name: this.state.name,
-        creator: "*&push"
-      });
+      if (notification.origin === "selected")
+        this.props.navigation.navigate("ChatScreen", {
+          roomName: notification.data.roomName,
+          roomId: notification.data.roomId,
+          id: this.state.id,
+          name: this.state.name,
+          creator: "*&push"
+        });
     });
     await this.getRoomsLocal();
     const chatManager = new ChatManager({
