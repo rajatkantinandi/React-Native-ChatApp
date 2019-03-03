@@ -35,6 +35,9 @@ export default class Room extends React.Component {
   componentDidMount = async () => {
     await this.getLastMessage();
   };
+  componentWillReceiveProps = async nextProps => {
+    await this.getLastMessage();
+  };
   render() {
     const { item, userId, name, navigation } = this.props;
     return (

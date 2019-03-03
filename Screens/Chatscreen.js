@@ -51,10 +51,11 @@ class Chatscreen extends React.Component {
         messages: [],
         loading: true
       });
-    await AsyncStorage.setItem(
-      "room:" + nextProps.navigation.getParam("roomId"),
-      JSON.stringify([])
-    );
+    if (nextProps.navigation.getParam("creator") !== "*&push")
+      await AsyncStorage.setItem(
+        "room:" + nextProps.navigation.getParam("roomId"),
+        JSON.stringify([])
+      );
     await this.connectToChat();
     await this.getAllMessages();
   };

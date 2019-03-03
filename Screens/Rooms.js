@@ -7,7 +7,7 @@ import {
   Alert,
   ProgressBarAndroid
 } from "react-native";
-import { Icon } from "expo";
+import { Icon, Notifications } from "expo";
 import credentials from "../credentials";
 import requestApi from "../requestApi";
 import Prompt from "rn-prompt";
@@ -28,7 +28,6 @@ class Rooms extends React.Component {
     id: this.props.navigation.getParam("id"),
     name: this.props.navigation.getParam("name"),
     rooms: [],
-    access_token: null,
     prompt: {
       title: "New Room",
       placeholder: "Enter A New Room Name",
@@ -39,7 +38,8 @@ class Rooms extends React.Component {
     token: this.props.navigation.getParam("token"),
     activity: false,
     activityText: "Please wait..",
-    loading: true
+    loading: true,
+    currentUser: null
   };
 
   showPrompt = title => {
@@ -49,34 +49,32 @@ class Rooms extends React.Component {
           title: title,
           placeholder: "Enter A New Room Name",
           onSubmit: async value => {
-            const url = credentials.CHATKIT_API + "/rooms";
-            this.setState({
-              activity: true,
-              activityText: "Creating new Room\nPlease wait..."
-            });
-            const response = await fetch(url, {
-              method: "POST",
-              mode: "cors",
-              headers: {
-                Authorization: "Bearer " + this.state.access_token,
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({
-                name: value,
-                user_ids: [this.state.id],
-                private: isPrivate
-              })
-            });
-            if (response.ok) {
-              const newRoom = await response.json();
+            if (this.state.currentUser) {
               this.setState({
-                promptVisible: false,
-                activity: false
+                activity: true,
+                activityText: "Creating new Room\nPlease wait..."
               });
-            } else {
-              alert("error: " + response.status);
-              this.setState({ promptVisible: false, activity: false });
-            }
+              this.state.currentUser
+                .createRoom({
+                  name: value,
+                  private: isPrivate,
+                  addUserIds: [this.state.id]
+                })
+                .then(room => {
+                  this.setState({
+                    promptVisible: false,
+                    activity: false
+                  });
+                  console.log(`Created room called ${room.name}`);
+                })
+                .catch(err => {
+                  this.setState({
+                    promptVisible: false,
+                    activity: false
+                  });
+                  console.log(`Error creating room ${err}`);
+                });
+            } else alert("Connection not established.. Please wait..");
           },
           onCancel: () => this.setState({ promptVisible: false })
         };
@@ -100,41 +98,39 @@ class Rooms extends React.Component {
             }
           }
         ],
-        { cancelable: false }
+        { cancelable: true }
       );
     } else if (title === "Private Chat with a new User") {
       const prompt = {
         title: title,
         placeholder: "Enter the username to chat with",
         onSubmit: async value => {
-          const url = credentials.CHATKIT_API + "/rooms";
-          this.setState({
-            activity: true,
-            activityText: "Creating new Room\nPlease wait..."
-          });
-          const response = await fetch(url, {
-            method: "POST",
-            mode: "cors",
-            headers: {
-              Authorization: "Bearer " + this.state.access_token,
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              name: this.state.id + " & " + value,
-              user_ids: [this.state.id, value],
-              private: true
-            })
-          });
-          if (response.ok) {
-            const newRoom = await response.json();
+          if (this.state.currentUser) {
             this.setState({
-              promptVisible: false,
-              activity: false
+              activity: true,
+              activityText: "Creating new Room\nPlease wait..."
             });
-          } else {
-            alert("error: Invalid Username >> " + response.status);
-            this.setState({ promptVisible: false, activity: false });
-          }
+            this.state.currentUser
+              .createRoom({
+                name: this.state.id + " & " + value,
+                private: true,
+                addUserIds: [this.state.id, value]
+              })
+              .then(room => {
+                this.setState({
+                  promptVisible: false,
+                  activity: false
+                });
+                console.log(`Created room called ${room.name}`);
+              })
+              .catch(err => {
+                this.setState({
+                  promptVisible: false,
+                  activity: false
+                });
+                console.log(`Error creating room ${err}`);
+              });
+          } else alert("Connetion not established.. Please Wait...");
         },
         onCancel: () => this.setState({ promptVisible: false })
       };
@@ -156,18 +152,6 @@ class Rooms extends React.Component {
     const response = await requestApi(url, data);
     const result = await response.json();
     if (response.ok) this.setState({ rooms: result, loading: false });
-    else alert(result);
-  };
-  getAuth = async () => {
-    const url = credentials.SERVER_URL + "/auth";
-    const data = {
-      instanceLocator: credentials.INSTANCE_LOCATOR,
-      key: credentials.SECRET_KEY,
-      id: this.state.id
-    };
-    const response = await requestApi(url, data);
-    const result = await response.json();
-    if (response.ok) this.setState({ access_token: result.access_token });
     else alert(result);
   };
   signOut = async () => {
@@ -198,20 +182,27 @@ class Rooms extends React.Component {
       this.setState({
         id: authUser.id,
         name: authUser.name,
-        access_token: authUser.access_token,
         token: authUser.token
       });
       this.props.navigation.setParams({ name: authUser.name });
     } else {
-      await this.getAuth();
       const userAuth = {
         id: this.state.id,
         name: this.state.name,
-        access_token: this.state.access_token,
         token: this.state.token
       };
       await AsyncStorage.setItem("user-auth", JSON.stringify(userAuth));
     }
+    Notifications.addListener(notification => {
+      console.log("New notification", notification);
+      this.props.navigation.navigate("ChatScreen", {
+        roomName: notification.data.roomName,
+        roomId: notification.data.roomId,
+        id: this.state.id,
+        name: this.state.name,
+        creator: "*&push"
+      });
+    });
     await this.getRoomsLocal();
     const chatManager = new ChatManager({
       instanceLocator: credentials.INSTANCE_LOCATOR,
@@ -269,11 +260,22 @@ class Rooms extends React.Component {
         });
       }
     });
+    this.setState({ currentUser });
+    this.focusEvent = this.props.navigation.addListener("willFocus", () => {
+      this.getRoomsLocal();
+    });
     await this.getRooms();
     await AsyncStorage.setItem(
       "rooms-" + this.state.id,
       JSON.stringify(this.state.rooms)
     );
+  };
+  refresh = async () => {
+    await this.getRoomsLocal();
+    this.getRooms();
+  };
+  componentWillUnmount = () => {
+    this.focusEvent && this.focusEvent.remove();
   };
   render() {
     return (
@@ -292,6 +294,7 @@ class Rooms extends React.Component {
               userId={this.state.id}
               name={this.state.name}
               navigation={this.props.navigation}
+              refresh={this.refresh}
             />
           )}
         />
@@ -357,7 +360,7 @@ class Rooms extends React.Component {
           <ActionButton.Item
             buttonColor="#2020a0"
             title="Refresh"
-            onPress={() => this.getRooms()}
+            onPress={() => this.refresh()}
           >
             <Icon.Ionicons
               name="md-refresh-circle"
