@@ -39,7 +39,8 @@ class Rooms extends React.Component {
     activity: false,
     activityText: "Please wait..",
     loading: true,
-    currentUser: null
+    currentUser: null,
+    newMsg: []
   };
 
   showPrompt = title => {
@@ -193,8 +194,29 @@ class Rooms extends React.Component {
       };
       await AsyncStorage.setItem("user-auth", JSON.stringify(userAuth));
     }
-    Notifications.addListener(notification => {
+    Notifications.addListener(async notification => {
       console.log("New notification", notification);
+      if (notification.origin === "received") {
+        let messages = await AsyncStorage.getItem(
+          "room:" + notification.data.roomId
+        );
+        messages = JSON.parse(messages);
+        const newMsg = {
+          user_id: notification.data.senderId,
+          text: notification.data.text,
+          id: notification.data.messageId,
+          created_at: new Date().toUTCString()
+        };
+        messages.push(newMsg);
+        await AsyncStorage.setItem(
+          "room:" + notification.data.roomId,
+          JSON.stringify(messages)
+        );
+        let newMsgRoom = this.state.newMsg;
+        newMsgRoom.push(notification.data.roomId);
+        await this.setState({ newMsg: newMsgRoom });
+        this.getRooms();
+      }
       if (notification.origin === "selected")
         this.props.navigation.navigate("ChatScreen", {
           roomName: notification.data.roomName,
@@ -238,8 +260,8 @@ class Rooms extends React.Component {
           { cancelable: false }
         );
       },
-      onRemovedFromRoom: removedRoom => {
-        this.setState({
+      onRemovedFromRoom: async removedRoom => {
+        await this.setState({
           rooms: this.state.rooms.filter(room => room.id !== removedRoom.id)
         });
         alert("You are removed from room: " + removedRoom.name);
@@ -262,7 +284,8 @@ class Rooms extends React.Component {
     });
     this.setState({ currentUser });
     this.focusEvent = this.props.navigation.addListener("willFocus", () => {
-      this.getRoomsLocal();
+      this.setState({ newMsg: [] });
+      this.getRooms();
     });
     await this.getRooms();
     await AsyncStorage.setItem(
@@ -295,6 +318,7 @@ class Rooms extends React.Component {
               name={this.state.name}
               navigation={this.props.navigation}
               refresh={this.refresh}
+              newMsg={this.state.newMsg.indexOf(item.id) > -1}
             />
           )}
         />

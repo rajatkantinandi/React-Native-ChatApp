@@ -51,18 +51,27 @@ export default class Room extends React.Component {
             id: userId,
             name: name,
             creator: item.created_by_id
-          })
-        }
+          })}
       >
         <View style={styles.heading}>
           <Text style={styles.txt}>#{item.name}</Text>
           <Text style={styles.msg}>
-            {this.state.lastMsg
-              ? " on " + this.parseDate(this.state.lastMsg.created_at)
-              : ""}
+            {this.state.lastMsg ? (
+              " on " + this.parseDate(this.state.lastMsg.created_at)
+            ) : (
+              ""
+            )}
           </Text>
         </View>
-        <Text style={styles.msg}>
+        <Text
+          style={
+            this.props.newMsg ? (
+              { color: "green", fontWeight: "bold" }
+            ) : (
+              styles.msg
+            )
+          }
+        >
           {this.state.lastMsg &&
             this.state.lastMsg.user_id + ": " + this.state.lastMsg.text}
         </Text>

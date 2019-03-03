@@ -41,6 +41,12 @@ class Chatscreen extends React.Component {
   };
   _keyExtractor = (item, index) => "" + index;
   componentWillReceiveProps = async nextProps => {
+    if (this.state.currentUser)
+      this.state.currentUser.roomSubscriptions[this.state.roomId].cancel();
+    await AsyncStorage.setItem(
+      "room:" + this.state.roomId,
+      JSON.stringify(this.state.messages)
+    );
     if (this.mounted)
       await this.setState({
         name: nextProps.navigation.getParam("name"),
@@ -48,7 +54,6 @@ class Chatscreen extends React.Component {
         roomId: nextProps.navigation.getParam("roomId"),
         roomName: nextProps.navigation.getParam("roomName"),
         creator: nextProps.navigation.getParam("creator"),
-        messages: [],
         loading: true
       });
     await this.getAllMessagesLocal();
@@ -84,15 +89,13 @@ class Chatscreen extends React.Component {
     await this.getAllMessagesLocal();
     await this.connectToChat();
   };
-  componentDidUpdate = async () => {
+  componentWillUnmount = async () => {
+    if (this.state.currentUser)
+      this.state.currentUser.roomSubscriptions[this.state.roomId].cancel();
     await AsyncStorage.setItem(
       "room:" + this.state.roomId,
       JSON.stringify(this.state.messages)
     );
-  };
-  componentWillUnmount = () => {
-    if (this.state.currentUser)
-      this.state.currentUser.roomSubscriptions[this.state.roomId].cancel();
     this.mounted = false;
   };
   sendMessage = async text => {
@@ -125,8 +128,8 @@ class Chatscreen extends React.Component {
     let messages = await AsyncStorage.getItem("room:" + this.state.roomId);
     if (messages) {
       messages = JSON.parse(messages);
-      if (this.mounted) await this.setState({ messages });
-    }
+    } else messages = [];
+    if (this.mounted) await this.setState({ messages });
   };
   getAllMessages = async () => {
     if (this.mounted) {
