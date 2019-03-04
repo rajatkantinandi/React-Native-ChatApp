@@ -64,7 +64,7 @@ class Chatscreen extends React.Component {
       instanceLocator: credentials.INSTANCE_LOCATOR,
       userId: this.state.id,
       tokenProvider: new TokenProvider({
-        url: credentials.SERVER_URL + "/tokenProvider"
+        url: credentials.TOKEN_PROVIDER_URL
       })
     });
     const currentUser = await chatManager.connect();

@@ -3,6 +3,7 @@
     "name": "ChatApp",
     "slug": "ChatApp",
     "privacy": "public",
+    "description": "ChatApp built using React Native with @pusher/ChatKit API",
     "sdkVersion": "32.0.0",
     "androidStatusBar": {
       "barStyle": "light-content",
