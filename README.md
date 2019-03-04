@@ -29,7 +29,7 @@
 - Clone the repo
 - Create a new branch with "Fix-<your-fix>" or "Feature-<your-feature>"
 - To test your chatkit instance create an account at [Pusher.com](https://dashboard.pusher.com/accounts/sign_up "Sign Up @pusher") & create your chatkit instance
-- Rename the "credentials.1.js" to "credentials.js" & put your <instance-locator>, <server-key>, <instance-id> & <your-test-token-provider-url>in the file & save the file
+- Rename the "credentials.1.js" to "credentials.js" & put your &lt;instance-locator&gt;, &lt;server-key&gt;, &lt;instance-id&gt; & &lt;your-test-token-provider-url&gt;in the file & save the file
 - npm install to install all dependencies
 - You need to have expo installed as a global npm package
 - Run "expo start" & launch the app on device or emulator for testing
