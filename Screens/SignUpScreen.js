@@ -3,12 +3,14 @@ import {
   StyleSheet,
   ScrollView,
   Text,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
+  View
 } from "react-native";
 import { Icon, Permissions, Notifications } from "expo";
 import TitleBar from "../Components/TitleBar";
 import StyledBtn from "../Components/StyledBtn";
 import StyledInput from "../Components/StyledInput";
+import PasswordInput from "../Components/PasswordInput";
 import credentials from "../credentials";
 import requestApi from "../requestApi";
 
@@ -28,7 +30,7 @@ export default class SignUpScreen extends React.Component {
     repeatPassword: "",
     activity: false,
     validUserName: false,
-    availability: "x Username Unvailable"
+    availability: "x Username must be atleast 5 chars"
   };
   getNotificationToken = async () => {
     const { status: existingStatus } = await Permissions.getAsync(
@@ -51,7 +53,12 @@ export default class SignUpScreen extends React.Component {
     }
 
     // Get the token that uniquely identifies this device
-    let token = await Notifications.getExpoPushTokenAsync();
+    let token = "";
+    try {
+      token = await Notifications.getExpoPushTokenAsync();
+    } catch (err) {
+      alert("Push Notifications disabled");
+    }
     return token;
   };
   signupAction = async () => {
@@ -92,7 +99,7 @@ export default class SignUpScreen extends React.Component {
       if (response.ok) {
         this.setState({ activity: false });
         this.props.navigation.navigate("Rooms", result);
-      } else alert(response.statusText);
+      } else alert(response._bodyText);
     }
   };
   validateUser = async username => {
@@ -109,13 +116,22 @@ export default class SignUpScreen extends React.Component {
     };
     const response = await requestApi(url, data);
     if (username.length < 5) {
-      this.setState({ validUserName: false });
-    } else if (response.ok) this.setState({ validUserName: true });
+      await this.setState({
+        validUserName: false,
+        availability: "x Username must be atleast 5 chars !!"
+      });
+    } else if (response.ok) await this.setState({ validUserName: true });
+    else {
+      await this.setState({
+        validUserName: false,
+        availability: "x Username unavailable !!"
+      });
+    }
   };
   render() {
     const styles = StyleSheet.create({
       container: {
-        flex: 0,
+        flex: 1,
         alignItems: "center"
       },
       hint: {
@@ -127,73 +143,74 @@ export default class SignUpScreen extends React.Component {
       }
     });
     return (
-      <ScrollView contentContainerStyle={styles.container}>
-        <TitleBar />
+      <ScrollView>
         <KeyboardAvoidingView
           enabled
-          behavior="height"
-          style={styles.container}
+          behavior="position"
+          keyboardVerticalOffset={30}
         >
-          <StyledInput
-            bgColor="#ffd"
-            placeholder="Enter Your Name"
-            autoCapitalize="words"
-            onChangeText={name => this.setState({ name })}
-            icon={<Icon.FontAwesome name="user-circle" size={25} />}
-          />
-          <StyledInput
-            bgColor="#ffd"
-            placeholder="Choose an Username"
-            autoCapitalize="none"
-            onChangeText={async username => {
-              await this.validateUser(username);
-            }}
-            icon={<Icon.FontAwesome name="user-circle" size={25} />}
-          />
-          {this.state.validUserName ? (
-            <Text
-              style={[
-                styles.hint,
-                { color: "green", backgroundColor: "white" }
-              ]}
-            >
-              ✅ Username Available
+          <TitleBar />
+          <View style={styles.container}>
+            <StyledInput
+              bgColor="#ffd"
+              placeholder="Enter Your Name"
+              autoCapitalize="words"
+              onChangeText={name => this.setState({ name })}
+              icon={<Icon.FontAwesome name="user-circle" size={25} />}
+            />
+            <StyledInput
+              bgColor="#ffd"
+              placeholder="Choose an Username"
+              autoCapitalize="none"
+              onChangeText={async username => {
+                await this.validateUser(username);
+              }}
+              icon={<Icon.FontAwesome name="user-circle" size={25} />}
+            />
+            {this.state.validUserName ? (
+              <Text
+                style={[
+                  styles.hint,
+                  { color: "green", backgroundColor: "white" }
+                ]}
+              >
+                ✅ Username Available
+              </Text>
+            ) : (
+              <Text
+                style={[
+                  styles.hint,
+                  { color: "#a22", backgroundColor: "#fef" }
+                ]}
+              >
+                {this.state.availability}
+              </Text>
+            )}
+            <PasswordInput
+              bgColor="#ffd"
+              placeholder="Choose a Password"
+              onChangeText={password => this.setState({ password })}
+              autoCapitalize="none"
+            />
+            <Text style={styles.hint}>
+              ** Password must be atleast 8 chars long & have only letters &
+              numbers
             </Text>
-          ) : (
-            <Text
-              style={[styles.hint, { color: "#a22", backgroundColor: "#fef" }]}
-            >
-              {this.state.availability}
-            </Text>
-          )}
-          <StyledInput
-            bgColor="#ffd"
-            placeholder="Choose a Password"
-            onChangeText={password => this.setState({ password })}
-            icon={<Icon.MaterialIcons name="lock" size={25} />}
-            secureTextEntry={true}
-            autoCapitalize="none"
-          />
-          <Text style={styles.hint}>
-            ** Password must be atleast 8 chars long & have only letters &
-            numbers
-          </Text>
-          <StyledInput
-            bgColor="#ffd"
-            placeholder="Repeat Password"
-            onChangeText={repeatPassword => this.setState({ repeatPassword })}
-            icon={<Icon.MaterialIcons name="lock" size={25} />}
-            secureTextEntry={true}
-            autoCapitalize="none"
-          />
-          <StyledBtn
-            bgcolor="#394"
-            txtColor="#fff"
-            activity={this.state.activity}
-            title={this.state.activity ? "Please wait..." : "Sign Up"}
-            onPress={this.signupAction}
-            width={180}
-          />
+            <PasswordInput
+              bgColor="#ffd"
+              placeholder="Repeat Password"
+              onChangeText={repeatPassword => this.setState({ repeatPassword })}
+              autoCapitalize="none"
+            />
+            <StyledBtn
+              bgcolor="#394"
+              txtColor="#fff"
+              activity={this.state.activity}
+              title={this.state.activity ? "Please wait..." : "Sign Up"}
+              onPress={this.signupAction}
+              width={180}
+            />
+          </View>
         </KeyboardAvoidingView>
       </ScrollView>
     );

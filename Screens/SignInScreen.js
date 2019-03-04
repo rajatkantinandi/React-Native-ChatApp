@@ -1,11 +1,18 @@
 import React from "react";
-import { StyleSheet, ScrollView, KeyboardAvoidingView } from "react-native";
+import {
+  StyleSheet,
+  ScrollView,
+  KeyboardAvoidingView,
+  View
+} from "react-native";
 import { Icon, Permissions, Notifications } from "expo";
 import TitleBar from "../Components/TitleBar";
 import StyledBtn from "../Components/StyledBtn";
 import StyledInput from "../Components/StyledInput";
+import PasswordInput from "../Components/PasswordInput";
 import credentials from "../credentials";
 import requestApi from "../requestApi";
+import PassworInput from "../Components/PasswordInput";
 export default class SignInScreen extends React.Component {
   static navigationOptions = ({ navigation }) => {
     return {
@@ -42,7 +49,12 @@ export default class SignInScreen extends React.Component {
     }
 
     // Get the token that uniquely identifies this device
-    let token = await Notifications.getExpoPushTokenAsync();
+    let token = "";
+    try {
+      token = await Notifications.getExpoPushTokenAsync();
+    } catch (err) {
+      alert("Push Notifications disabled");
+    }
     return token;
   };
   signinAction = async () => {
@@ -52,7 +64,7 @@ export default class SignInScreen extends React.Component {
     else {
       this.setState({ activity: true });
       const token = await this.getNotificationToken();
-      console.log(token);
+      console.log("token", token);
       const data = {
         instanceLocator: credentials.INSTANCE_LOCATOR,
         key: credentials.SECRET_KEY,
@@ -62,11 +74,11 @@ export default class SignInScreen extends React.Component {
       };
       const url = credentials.SERVER_URL + "/signin";
       const response = await requestApi(url, data);
-      const result = await response.json();
       this.setState({ activity: false });
-      if (response.ok)
+      if (response.ok) {
+        const result = await response.json();
         this.props.navigation.navigate("Rooms", { ...result, token });
-      else alert(response.status);
+      } else alert(response._bodyText);
     }
   };
   render() {
@@ -78,34 +90,34 @@ export default class SignInScreen extends React.Component {
     });
     return (
       <ScrollView>
-        <TitleBar />
         <KeyboardAvoidingView
           enabled
-          behavior="padding"
-          style={styles.container}
+          behavior="position"
+          keyboardVerticalOffset={30}
         >
-          <StyledInput
-            bgColor="#ffd"
-            placeholder="Enter Username"
-            autoCapitalize="none"
-            onChangeText={username => this.setState({ username })}
-            icon={<Icon.FontAwesome name="user-circle" size={25} />}
-          />
-          <StyledInput
-            bgColor="#ffd"
-            placeholder="Enter Password"
-            onChangeText={password => this.setState({ password })}
-            icon={<Icon.MaterialIcons name="lock" size={25} />}
-            secureTextEntry={true}
-          />
-          <StyledBtn
-            bgcolor="#349"
-            txtColor="#fff"
-            activity={this.state.activity}
-            title={this.state.activity ? "Please wait..." : "Sign In"}
-            onPress={this.signinAction}
-            width={180}
-          />
+          <TitleBar />
+          <View style={styles.container}>
+            <StyledInput
+              bgColor="#ffd"
+              placeholder="Enter Username"
+              autoCapitalize="none"
+              onChangeText={username => this.setState({ username })}
+              icon={<Icon.FontAwesome name="user-circle" size={25} />}
+            />
+            <PasswordInput
+              bgColor="#ffd"
+              placeholder="Enter Password"
+              onChangeText={password => this.setState({ password })}
+            />
+            <StyledBtn
+              bgcolor="#349"
+              txtColor="#fff"
+              activity={this.state.activity}
+              title={this.state.activity ? "Please wait..." : "Sign In"}
+              onPress={this.signinAction}
+              width={180}
+            />
+          </View>
         </KeyboardAvoidingView>
       </ScrollView>
     );

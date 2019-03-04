@@ -11,7 +11,7 @@ export default () => {
         width: "100%",
         backgroundColor: "#222265",
         padding: 4,
-        paddingTop: 20
+        paddingTop: 50
       }}
     >
       <Text style={{ fontSize: 35, color: "#ccf" }}>ChatApp</Text>

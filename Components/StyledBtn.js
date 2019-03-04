@@ -13,9 +13,6 @@ export default class StyledBtn extends React.Component {
         marginLeft: 6,
         backgroundColor: "#373",
         padding: 6,
-        flex: 0,
-        justifyContent: "center",
-        flexDirection: "row",
         borderRadius: 6,
         borderColor: "#141",
         borderWidth: 1
@@ -23,6 +20,7 @@ export default class StyledBtn extends React.Component {
       txt: {
         paddingLeft: 4,
         fontWeight: "bold",
+        textAlign: "center",
         fontSize: 17
       }
     });
