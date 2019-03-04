@@ -1,4 +1,4 @@
-# React-Native-ChatApp
+<p align="center"><img src='assets/icon.png' alt='logo'/><h1>React Native ChatApp</h1></p>
 
 ### ChatApp built using React Native with @pusher/ChatKit API
 
