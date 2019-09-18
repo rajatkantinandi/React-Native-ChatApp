@@ -4,7 +4,8 @@ import {
   ScrollView,
   Text,
   KeyboardAvoidingView,
-  View
+  View,
+  Platform,
 } from "react-native";
 import { Icon, Permissions, Notifications } from "expo";
 import TitleBar from "../Components/TitleBar";
@@ -140,6 +141,11 @@ export default class SignUpScreen extends React.Component {
         textAlign: "center",
         margin: 2,
         padding: 2
+      },
+      iosNotchPadding: {
+        height: 40,
+        backgroundColor: '#222265',
+        width: '100%',
       }
     });
     return (
@@ -149,6 +155,7 @@ export default class SignUpScreen extends React.Component {
           behavior="position"
           keyboardVerticalOffset={30}
         >
+          {Platform.OS === 'ios' && <View style={styles.iosNotchPadding} />}
           <TitleBar />
           <View style={styles.container}>
             <StyledInput
@@ -177,15 +184,15 @@ export default class SignUpScreen extends React.Component {
                 ✅ Username Available
               </Text>
             ) : (
-              <Text
-                style={[
-                  styles.hint,
-                  { color: "#a22", backgroundColor: "#fef" }
-                ]}
-              >
-                {this.state.availability}
-              </Text>
-            )}
+                <Text
+                  style={[
+                    styles.hint,
+                    { color: "#a22", backgroundColor: "#fef" }
+                  ]}
+                >
+                  {this.state.availability}
+                </Text>
+              )}
             <PasswordInput
               bgColor="#ffd"
               placeholder="Choose a Password"

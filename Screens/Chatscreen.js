@@ -161,8 +161,8 @@ class Chatscreen extends React.Component {
     Alert.alert(
       "Leave Room ?",
       'Are you sure to leave "' +
-        this.state.roomName +
-        "\" room?\nThis action can't be undone",
+      this.state.roomName +
+      "\" room?\nThis action can't be undone",
       [
         {
           text: "Yes",
@@ -202,8 +202,8 @@ class Chatscreen extends React.Component {
       Alert.alert(
         "Delete Room ?",
         'Are you sure to delete "' +
-          this.state.roomName +
-          "\" room?\nThis action can't be undone",
+        this.state.roomName +
+        "\" room?\nThis action can't be undone",
         [
           {
             text: "Yes",
@@ -340,7 +340,7 @@ class Chatscreen extends React.Component {
           inverted
         />
         <Prompt
-          title="Rename this Room"
+          title="Rename the Room"
           placeholder="Enter new Room Name"
           visible={this.state.promptRenameVisible}
           onSubmit={value => this.renameRoom(value)}

@@ -5,8 +5,8 @@ import {
   createSwitchNavigator,
   createBottomTabNavigator
 } from "react-navigation";
-import { AsyncStorage } from "react-native";
-import { AppLoading, Asset, Icon } from "expo";
+import { AsyncStorage, Platform } from "react-native";
+import { AppLoading, Asset } from "expo";
 import ChatScreen from "./Screens/Chatscreen";
 import Rooms from "./Screens/Rooms";
 import JoinRooms from "./Screens/JoinRooms";
@@ -27,9 +27,9 @@ const Screens = createStackNavigator(
         marginTop: 5
       },
       headerStyle: {
-        height: 50,
+        height: Platform.OS === 'ios' ? 35 : 50,
         backgroundColor: "#227",
-        marginTop: -25
+        marginTop: Platform.OS === 'ios' ? 5 : -25,
       },
       headerTintColor: "#fff"
     }
@@ -69,9 +69,9 @@ export default class App extends React.Component {
 
   _handleFinishLoading = async () => {
     const loggedIn = await AsyncStorage.getItem("user-auth");
-    let initailScreen = "login";
+    let initialScreen = "login";
     if (loggedIn) {
-      initailScreen = "Screens";
+      initialScreen = "Screens";
     }
     const SignUp = createSwitchNavigator(
       {
@@ -79,7 +79,7 @@ export default class App extends React.Component {
         Screens: Screens
       },
       {
-        initialRouteName: initailScreen
+        initialRouteName: initialScreen
       }
     );
     this.setState({ AppContainer: createAppContainer(SignUp) });
@@ -92,11 +92,11 @@ export default class App extends React.Component {
     return this.state.AppContainer ? (
       <this.state.AppContainer />
     ) : (
-      <AppLoading
-        startAsync={this._loadResourcesAsync}
-        onError={this._handleLoadingError}
-        onFinish={this._handleFinishLoading}
-      />
-    );
+        <AppLoading
+          startAsync={this._loadResourcesAsync}
+          onError={this._handleLoadingError}
+          onFinish={this._handleFinishLoading}
+        />
+      );
   }
 }

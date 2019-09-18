@@ -3,7 +3,8 @@ import {
   StyleSheet,
   ScrollView,
   KeyboardAvoidingView,
-  View
+  View,
+  Platform,
 } from "react-native";
 import { Icon, Permissions, Notifications } from "expo";
 import TitleBar from "../Components/TitleBar";
@@ -12,7 +13,7 @@ import StyledInput from "../Components/StyledInput";
 import PasswordInput from "../Components/PasswordInput";
 import credentials from "../credentials";
 import requestApi from "../requestApi";
-import PassworInput from "../Components/PasswordInput";
+
 export default class SignInScreen extends React.Component {
   static navigationOptions = ({ navigation }) => {
     return {
@@ -86,7 +87,12 @@ export default class SignInScreen extends React.Component {
       container: {
         flex: 1,
         alignItems: "center"
-      }
+      },
+      iosNotchPadding: {
+        height: 40,
+        backgroundColor: '#222265',
+        width: '100%',
+      },
     });
     return (
       <ScrollView>
@@ -95,6 +101,7 @@ export default class SignInScreen extends React.Component {
           behavior="position"
           keyboardVerticalOffset={30}
         >
+          {Platform.OS === 'ios' && <View style={styles.iosNotchPadding} />}
           <TitleBar />
           <View style={styles.container}>
             <StyledInput
