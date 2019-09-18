@@ -65,6 +65,7 @@ export default class InputArea extends React.Component {
 const styles = StyleSheet.create({
   container: {
     paddingLeft: 10,
+    paddingRight: 10,
     paddingBottom: 8,
     paddingTop: 8,
     flex: 0,
