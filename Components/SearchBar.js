@@ -33,20 +33,30 @@ export default class SearchBar extends React.Component {
 }
 const styles = StyleSheet.create({
   container: {
-    margin: 10,
+    paddingLeft: 10,
+    paddingBottom: 8,
+    paddingTop: 8,
     flex: 0,
     flexDirection: "row",
-    zIndex: 10
+    zIndex: 2,
   },
   txt: {
-    padding: 10,
-    width: "80%",
-    height: 60,
-    borderRadius: 20,
-    borderColor: "#225",
-    borderWidth: 3
+    paddingLeft: 10,
+    paddingTop: 5,
+    paddingBottom: 5,
+    width: "85%",
+    height: 45,
+    borderRadius: 22,
+    fontSize: 18,
+    backgroundColor: 'white',
+    shadowColor: '#333',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 3,
+    elevation: 4,
   },
   icon: {
-    padding: 10
+    padding: 5,
+    paddingRight: 8,
   }
 });

@@ -28,8 +28,8 @@ export default class Message extends React.Component {
           }}
         >
           <View style={styles.heading}>
-            <Text style={finalStyle.from}>{this.props.from}</Text>
-            <Text style={finalStyle.text}>
+            <Text style={finalStyle.from} numberOfLines={1}>{this.props.from}</Text>
+            <Text style={finalStyle.dateText}>
               {this.props.at ? " on " + this.props.at : ""}
             </Text>
           </View>
@@ -39,8 +39,8 @@ export default class Message extends React.Component {
           (this.props.posted ? (
             <Icon.FontAwesome name="check-circle" size={20} />
           ) : (
-            <Icon.FontAwesome name="spinner" size={20} />
-          ))}
+              <Icon.FontAwesome name="spinner" size={20} />
+            ))}
       </View>
     );
   }
@@ -61,8 +61,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderBottomLeftRadius: 0,
     width: "93%",
-    borderWidth: 1,
-    borderColor: "#2a2"
+    shadowColor: '#2a2',
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 4,
+    elevation: 4,
   },
   heading: {
     flex: 0,
@@ -72,11 +75,17 @@ const styles = StyleSheet.create({
   from: {
     color: "#191",
     fontWeight: "bold",
-    fontSize: 20
+    fontSize: 20,
+    width: '45%',
+    overflow: 'hidden',
   },
   text: {
     color: "#111",
-    fontSize: 15
+    fontSize: 15,
+  },
+  dateText: {
+    color: "rgba(0,0,0,0.7)",
+    fontSize: 15,
   }
 });
 const styles2 = StyleSheet.create({
@@ -96,16 +105,25 @@ const styles2 = StyleSheet.create({
     borderRadius: 10,
     borderBottomRightRadius: 0,
     width: "93%",
-    borderWidth: 1,
-    borderColor: "#fcf"
+    shadowColor: '#315',
+    shadowOffset: { width: -2, height: 3 },
+    shadowOpacity: 0.6,
+    shadowRadius: 4,
+    elevation: 4,
   },
   from: {
     color: "#9ff",
     fontWeight: "bold",
-    fontSize: 20
+    fontSize: 20,
+    width: '45%',
+    overflow: 'hidden',
   },
   text: {
     color: "#fff",
     fontSize: 15
-  }
+  },
+  dateText: {
+    color: "rgba(250,250,250,0.7)",
+    fontSize: 15,
+  },
 });

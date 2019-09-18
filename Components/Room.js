@@ -10,13 +10,19 @@ export default class Room extends React.Component {
   state = {
     lastMsg: null
   };
+
+  mounted = true;
+
   getLastMessage = async () => {
     let messages = await AsyncStorage.getItem("room:" + this.props.item.id);
     messages = JSON.parse(messages);
     const lastMsg =
       messages && messages.length > 0 ? messages[messages.length - 1] : null;
-    await this.setState({ lastMsg });
+    if (this.mounted) {
+      await this.setState({ lastMsg });
+    }
   };
+
   parseDate = d => {
     const twoDigits = val => ((val + "").length === 1 ? "0" + val : val);
     if (d) {
@@ -32,17 +38,24 @@ export default class Room extends React.Component {
       );
     } else return null;
   };
+
   componentDidMount = async () => {
     await this.getLastMessage();
   };
+
   componentWillReceiveProps = async nextProps => {
     await this.getLastMessage();
   };
+
+  componentWillUnmount() {
+    this.mounted = false;
+  }
+
+
   render() {
     const { item, userId, name, navigation } = this.props;
     return (
       <TouchableOpacity
-        key={item.id}
         style={styles.roomContainer}
         onPress={() =>
           navigation.navigate("ChatScreen", {
@@ -59,8 +72,8 @@ export default class Room extends React.Component {
             {this.state.lastMsg ? (
               " on " + this.parseDate(this.state.lastMsg.created_at)
             ) : (
-              ""
-            )}
+                ""
+              )}
           </Text>
         </View>
         <Text
@@ -68,8 +81,8 @@ export default class Room extends React.Component {
             this.props.newMsg ? (
               { color: "green", fontWeight: "bold" }
             ) : (
-              styles.msg
-            )
+                styles.msg
+              )
           }
         >
           {this.state.lastMsg &&
@@ -84,10 +97,13 @@ const styles = StyleSheet.create({
     flex: 0,
     padding: 10,
     paddingTop: 6,
-    backgroundColor: "#eef",
-    marginBottom: 1,
-    borderBottomWidth: 1,
-    borderBottomColor: "grey"
+    backgroundColor: 'rgba(240,240,250,0.95)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+    marginBottom: 4,
   },
   txt: {
     fontSize: 18,
