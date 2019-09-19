@@ -5,7 +5,8 @@ import {
   StyleSheet,
   View,
   Clipboard,
-  ToastAndroid
+  ToastAndroid,
+  Platform,
 } from "react-native";
 import { Icon } from "expo";
 export default class Message extends React.Component {
@@ -20,11 +21,16 @@ export default class Message extends React.Component {
           style={finalStyle.container}
           onLongPress={() => {
             Clipboard.setString(this.props.text);
-            ToastAndroid.show(
-              "Copied to Clipboard",
-              ToastAndroid.LONG,
-              ToastAndroid.CENTER
-            );
+            if (Platform.OS === 'android') {
+              ToastAndroid.show(
+                "Copied to Clipboard",
+                ToastAndroid.LONG,
+                ToastAndroid.CENTER
+              );
+            }
+            else {
+              alert('Copied to Clipboard');
+            }
           }}
         >
           <View style={styles.heading}>
