@@ -134,7 +134,8 @@ class Rooms extends React.Component {
 }
 const styles = StyleSheet.create({
   container: {
-    flex: 1
+    flex: 1,
+    backgroundColor: "#eef",
   },
   roomContainer: {
     flex: 0,

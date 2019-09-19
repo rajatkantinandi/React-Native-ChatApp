@@ -24,6 +24,7 @@ class Rooms extends React.Component {
       title: "Rooms: [" + navigation.getParam("name", "Admin") + "]"
     };
   };
+
   state = {
     id: this.props.navigation.getParam("id"),
     name: this.props.navigation.getParam("name"),
@@ -463,9 +464,11 @@ class Rooms extends React.Component {
     );
   }
 }
+
 const styles = StyleSheet.create({
   container: {
-    flex: 1
+    flex: 1,
+    backgroundColor: '#fff',
   },
   txt: {
     fontSize: 18,
@@ -477,4 +480,5 @@ const styles = StyleSheet.create({
     elevation: 4,
   }
 });
+
 export default Rooms;

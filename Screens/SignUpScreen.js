@@ -133,7 +133,8 @@ export default class SignUpScreen extends React.Component {
     const styles = StyleSheet.create({
       container: {
         flex: 1,
-        alignItems: "center"
+        height: '100%',
+        alignItems: "center",
       },
       hint: {
         fontSize: 15,
@@ -149,7 +150,7 @@ export default class SignUpScreen extends React.Component {
       }
     });
     return (
-      <ScrollView>
+      <ScrollView style={{ backgroundColor: "#eef" }}>
         <KeyboardAvoidingView
           enabled
           behavior="position"

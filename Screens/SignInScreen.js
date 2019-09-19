@@ -86,7 +86,7 @@ export default class SignInScreen extends React.Component {
     const styles = StyleSheet.create({
       container: {
         flex: 1,
-        alignItems: "center"
+        alignItems: 'center',
       },
       iosNotchPadding: {
         height: 40,
@@ -95,7 +95,7 @@ export default class SignInScreen extends React.Component {
       },
     });
     return (
-      <ScrollView>
+      <ScrollView style={{ backgroundColor: "#eef" }}>
         <KeyboardAvoidingView
           enabled
           behavior="position"
