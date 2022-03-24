@@ -1,3 +1,5 @@
+> Note: this project does not work anymore & is readonly since pusher has stopped their chatkit service as of April, 2020. More details here: https://getstream.io/blog/pusher-shutting-down-chatkit/. If anyone wants to fork this & use some other API to rebuild this app, they are welcome. 
+
 <p align="center"><img src='assets/icon.png' alt='logo'/><h1>React Native ChatApp</h1></p>
 
 ### ChatApp built using React Native with @pusher/ChatKit API
